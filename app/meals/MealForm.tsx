@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function MealForm() {
+export type MealPreset = {
+  name: string;
+  carbs_g: number;
+  protein_g: number;
+  fat_g: number;
+};
+
+export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
@@ -12,6 +19,23 @@ export default function MealForm() {
   const [protein, setProtein] = useState("");
   const [fat, setFat] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const matches = useMemo(() => {
+    const q = name.trim().toLowerCase();
+    const pool = q
+      ? presets.filter((p) => p.name.toLowerCase().includes(q))
+      : presets;
+    return pool.slice(0, 8);
+  }, [name, presets]);
+
+  function applyPreset(p: MealPreset) {
+    setName(p.name);
+    setCarbs(String(p.carbs_g));
+    setProtein(String(p.protein_g));
+    setFat(String(p.fat_g));
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,15 +64,49 @@ export default function MealForm() {
     startTransition(() => router.refresh());
   }
 
+  const showSuggestions = focused && matches.length > 0;
+
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <input
-        type="text"
-        placeholder="Meal name (optional)"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-      />
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Meal name (optional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onFocus={() => {
+            if (blurTimer.current) clearTimeout(blurTimer.current);
+            setFocused(true);
+          }}
+          onBlur={() => {
+            blurTimer.current = setTimeout(() => setFocused(false), 120);
+          }}
+          autoComplete="off"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
+        />
+        {showSuggestions && (
+          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+            {matches.map((p) => (
+              <li key={p.name}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    applyPreset(p);
+                    setFocused(false);
+                  }}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <span className="truncate">{p.name}</span>
+                  <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
+                    C {p.carbs_g}g · P {p.protein_g}g · F {p.fat_g}g
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div className="grid grid-cols-3 gap-2">
         <NumField label="Carbs (g)" value={carbs} onChange={setCarbs} />
         <NumField label="Protein (g)" value={protein} onChange={setProtein} />

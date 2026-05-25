@@ -14,17 +14,37 @@ export default async function HomePage() {
   const supabase = await createClient();
   const today = todayISO();
 
-  const [{ data: meals }, { data: settings }] = await Promise.all([
+  const [{ data: meals }, { data: settings }, { data: recent }] = await Promise.all([
     supabase
       .from("meals")
       .select("*")
       .eq("eaten_on", today)
       .order("created_at", { ascending: false }),
     supabase.from("settings").select("*").single(),
+    supabase
+      .from("meals")
+      .select("name,carbs_g,protein_g,fat_g,created_at")
+      .not("name", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
 
   const list = (meals ?? []) as Meal[];
   const s = settings as Settings | null;
+
+  const seen = new Set<string>();
+  const presets: { name: string; carbs_g: number; protein_g: number; fat_g: number }[] = [];
+  for (const r of (recent ?? []) as Pick<Meal, "name" | "carbs_g" | "protein_g" | "fat_g">[]) {
+    const key = (r.name ?? "").trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    presets.push({
+      name: r.name as string,
+      carbs_g: Number(r.carbs_g),
+      protein_g: Number(r.protein_g),
+      fat_g: Number(r.fat_g),
+    });
+  }
 
   const totals = list.reduce(
     (acc, m) => ({
@@ -73,7 +93,7 @@ export default async function HomePage() {
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="mb-3 text-sm font-medium text-zinc-500">Add meal</h2>
-        <MealForm />
+        <MealForm presets={presets} />
       </section>
 
       <section>
