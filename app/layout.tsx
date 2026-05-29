@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
+import Nav from "./Nav";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -29,12 +29,7 @@ export default async function RootLayout({
         {user && (
           <nav className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-              <div className="flex gap-4 text-sm">
-                <Link href="/" className="font-medium">Today</Link>
-                <Link href="/history" className="font-medium">History</Link>
-                <Link href="/weight" className="font-medium">Weight</Link>
-                <Link href="/settings" className="font-medium">Settings</Link>
-              </div>
+              <Nav />
               <form action="/auth/signout" method="post">
                 <button
                   type="submit"

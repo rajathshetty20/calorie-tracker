@@ -10,6 +10,7 @@ type Initial = {
   carbs_pct: number;
   protein_pct: number;
   fat_pct: number;
+  bottle_ml: number;
 };
 
 export default function SettingsForm({ initial }: { initial: Initial }) {
@@ -19,6 +20,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
   const [carbs, setCarbs] = useState(String(initial.carbs_pct));
   const [protein, setProtein] = useState(String(initial.protein_pct));
   const [fat, setFat] = useState(String(initial.fat_pct));
+  const [bottleMl, setBottleMl] = useState(String(initial.bottle_ml));
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const c = Number(carbs) || 0;
@@ -40,6 +42,11 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
       setMsg({ kind: "err", text: `Macros must sum to 100% (currently ${sum}%).` });
       return;
     }
+    const ml = Math.round(Number(bottleMl));
+    if (!(ml > 0)) {
+      setMsg({ kind: "err", text: "Millilitres per bottle must be greater than 0." });
+      return;
+    }
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
@@ -52,6 +59,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
       carbs_pct: c,
       protein_pct: p,
       fat_pct: f,
+      bottle_ml: ml,
       updated_at: new Date().toISOString(),
     });
     if (error) {
@@ -91,6 +99,22 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
           </span>
         )}
       </div>
+
+      <label className="block border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <span className="text-xs text-zinc-500">Millilitres per water bottle</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          step="50"
+          min="1"
+          value={bottleMl}
+          onChange={(e) => setBottleMl(e.target.value)}
+          className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
+        />
+        <span className="mt-1 block text-xs text-zinc-500">
+          One tap on the Today page logs this much water.
+        </span>
+      </label>
 
       <button
         type="submit"

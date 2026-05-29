@@ -12,6 +12,15 @@ import {
   YAxis,
 } from "recharts";
 import { format, parseISO } from "date-fns";
+import WeekStats from "./WeekStats";
+import {
+  CHART_BODY,
+  fmtTick,
+  RangeToggle,
+  TooltipCard,
+  tickInterval,
+  type Range,
+} from "./chartParts";
 
 export type DayRow = {
   date: string; // YYYY-MM-DD
@@ -24,70 +33,44 @@ export type DayRow = {
   total_kcal: number;
 };
 
-type Range = 7 | 30 | 90;
-
 export default function HistoryChart({
   rows,
   target,
+  avg7,
+  std7,
 }: {
   rows: DayRow[];
   target: number;
+  avg7: string;
+  std7: string;
 }) {
   const [range, setRange] = useState<Range>(30);
 
   const data = useMemo(() => rows.slice(-range), [rows, range]);
 
-  const logged = data.filter((d) => d.total_kcal > 0);
-  const avg =
-    logged.length > 0
-      ? Math.round(logged.reduce((a, d) => a + d.total_kcal, 0) / logged.length)
-      : 0;
-  const onTarget = logged.filter((d) => Math.abs(d.total_kcal - target) <= target * 0.1).length;
-
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex gap-3 text-xs">
-          <Stat label="Avg / logged day" value={`${avg} kcal`} />
-          <Stat label="Within 10% target" value={`${onTarget}/${logged.length}`} />
+        <div className="flex items-center gap-4">
+          <h2 className="text-sm font-medium text-zinc-500">Calories</h2>
+          <WeekStats avg={avg7} std={std7} />
         </div>
-        <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 text-xs dark:border-zinc-800">
-          {([7, 30, 90] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRange(r)}
-              className={`px-2 py-1 ${
-                range === r
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              }`}
-            >
-              {r}d
-            </button>
-          ))}
-        </div>
+        <RangeToggle value={range} onChange={setRange} />
       </div>
 
-      <div className="h-72 w-full">
+      <div className={CHART_BODY}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
             <XAxis
               dataKey="date"
-              tickFormatter={(v: string) => format(parseISO(v), range === 7 ? "EEE" : "MMM d")}
+              tickFormatter={(v: string) => fmtTick(v, range)}
               tick={{ fontSize: 11 }}
               stroke="#a1a1aa"
-              interval={range === 90 ? 6 : range === 30 ? 2 : 0}
+              interval={tickInterval(range)}
             />
             <YAxis tick={{ fontSize: 11 }} stroke="#a1a1aa" width={42} />
-            <Tooltip
-              cursor={{ fill: "rgba(0,0,0,0.04)" }}
-              labelFormatter={(v) =>
-                typeof v === "string" ? format(parseISO(v), "PPP") : String(v ?? "")
-              }
-              content={<MacroTooltip />}
-            />
+            <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} content={<MacroTooltip />} />
             <ReferenceLine
               y={target}
               stroke="#71717a"
@@ -107,15 +90,6 @@ export default function HistoryChart({
         <Legend color="bg-rose-500" label="Fat" />
       </div>
     </section>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-zinc-500">{label}</div>
-      <div className="font-medium text-zinc-900 tabular-nums dark:text-zinc-100">{value}</div>
-    </div>
   );
 }
 
@@ -143,14 +117,13 @@ function MacroTooltip({
   if (!row) return null;
   const dateLabel = label && typeof label === "string" ? format(parseISO(label), "PPP") : "";
   return (
-    <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-      <div className="mb-1 font-medium">{dateLabel}</div>
+    <TooltipCard title={dateLabel}>
       <div className="tabular-nums">Total: {Math.round(row.total_kcal)} kcal</div>
       <div className="mt-1 grid grid-cols-2 gap-x-3 tabular-nums text-zinc-500">
         <span>Carbs</span><span>{Math.round(row.carbs_g)}g · {Math.round(row.carbs_kcal)} kcal</span>
         <span>Protein</span><span>{Math.round(row.protein_g)}g · {Math.round(row.protein_kcal)} kcal</span>
         <span>Fat</span><span>{Math.round(row.fat_g)}g · {Math.round(row.fat_kcal)} kcal</span>
       </div>
-    </div>
+    </TooltipCard>
   );
 }

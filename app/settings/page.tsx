@@ -12,7 +12,7 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-sm text-zinc-500">Daily target and macro split.</p>
+        <p className="text-sm text-zinc-500">Daily target, macro split, and water bottle size.</p>
       </header>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -23,6 +23,7 @@ export default async function SettingsPage() {
               carbs_pct: 40,
               protein_pct: 30,
               fat_pct: 30,
+              bottle_ml: 1000,
             }
           }
         />

@@ -23,22 +23,41 @@ create table if not exists public.weights (
 );
 create index if not exists weights_user_day on public.weights (user_id, measured_on desc);
 
+-- Water is tracked as a per-day volume in millilitres. The "bottle" count in
+-- the UI is just a convenience: a tap adds settings.bottle_ml to this total.
+create table if not exists public.water (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users on delete cascade,
+  drank_on date not null default current_date,
+  ml integer not null default 0 check (ml >= 0),
+  created_at timestamptz not null default now(),
+  unique (user_id, drank_on)
+);
+create index if not exists water_user_day on public.water (user_id, drank_on desc);
+-- Ensure the volume column exists on databases created before this change.
+alter table public.water add column if not exists ml integer not null default 0 check (ml >= 0);
+
 create table if not exists public.settings (
   user_id uuid primary key references auth.users on delete cascade,
   target_calories integer not null default 2000 check (target_calories > 0),
   carbs_pct integer not null default 40 check (carbs_pct between 0 and 100),
   protein_pct integer not null default 30 check (protein_pct between 0 and 100),
   fat_pct integer not null default 30 check (fat_pct between 0 and 100),
+  bottle_ml integer not null default 1000 check (bottle_ml > 0),
   updated_at timestamptz not null default now(),
   check (carbs_pct + protein_pct + fat_pct = 100)
 );
+-- For databases created before bottle_ml existed.
+alter table public.settings add column if not exists bottle_ml integer not null default 1000 check (bottle_ml > 0);
 
 grant select, insert, update, delete on public.meals to authenticated;
 grant select, insert, update, delete on public.weights to authenticated;
+grant select, insert, update, delete on public.water to authenticated;
 grant select, insert, update, delete on public.settings to authenticated;
 
 alter table public.meals enable row level security;
 alter table public.weights enable row level security;
+alter table public.water enable row level security;
 alter table public.settings enable row level security;
 
 drop policy if exists "meals are owner-only" on public.meals;
@@ -47,6 +66,10 @@ create policy "meals are owner-only" on public.meals
 
 drop policy if exists "weights are owner-only" on public.weights;
 create policy "weights are owner-only" on public.weights
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "water is owner-only" on public.water;
+create policy "water is owner-only" on public.water
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 drop policy if exists "settings are owner-only" on public.settings;

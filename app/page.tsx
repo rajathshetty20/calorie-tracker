@@ -1,7 +1,10 @@
+import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { mealCalories, type Meal, type Settings, KCAL_PER_G } from "@/lib/types";
+import { mealCalories, type Meal, type Settings, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
 import MealForm from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
+import WaterTracker from "./WaterTracker";
+import WeightForm from "./WeightForm";
 
 function todayISO() {
   // Local YYYY-MM-DD
@@ -14,23 +17,29 @@ export default async function HomePage() {
   const supabase = await createClient();
   const today = todayISO();
 
-  const [{ data: meals }, { data: settings }, { data: recent }] = await Promise.all([
-    supabase
-      .from("meals")
-      .select("*")
-      .eq("eaten_on", today)
-      .order("created_at", { ascending: false }),
-    supabase.from("settings").select("*").single(),
-    supabase
-      .from("meals")
-      .select("name,carbs_g,protein_g,fat_g,created_at")
-      .not("name", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(200),
-  ]);
+  const [{ data: meals }, { data: settings }, { data: recent }, { data: waterRow }, { data: weightRow }] =
+    await Promise.all([
+      supabase
+        .from("meals")
+        .select("*")
+        .eq("eaten_on", today)
+        .order("created_at", { ascending: false }),
+      supabase.from("settings").select("*").single(),
+      supabase
+        .from("meals")
+        .select("name,carbs_g,protein_g,fat_g,created_at")
+        .not("name", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase.from("water").select("ml").eq("drank_on", today).maybeSingle(),
+      supabase.from("weights").select("weight_kg").eq("measured_on", today).maybeSingle(),
+    ]);
 
   const list = (meals ?? []) as Meal[];
   const s = settings as Settings | null;
+  const bottleMl = s?.bottle_ml ?? 1000;
+  const todaysMl = (waterRow as Pick<Water, "ml"> | null)?.ml ?? 0;
+  const todaysWeight = (weightRow as Pick<Weight, "weight_kg"> | null)?.weight_kg ?? null;
 
   const seen = new Set<string>();
   const presets: { name: string; carbs_g: number; protein_g: number; fat_g: number }[] = [];
@@ -72,22 +81,24 @@ export default async function HomePage() {
         <p className="text-sm text-zinc-500">{today}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-baseline justify-between">
-          <div>
-            <div className="text-3xl font-semibold tabular-nums">
-              {Math.round(totals.calories)}
-              <span className="text-base font-normal text-zinc-500"> / {target} kcal</span>
-            </div>
+      <section className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-6 shadow-sm dark:border-emerald-950/50 dark:from-emerald-950/30 dark:via-zinc-900 dark:to-zinc-900">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Calories today</div>
+        <div className="mt-2 flex items-baseline justify-between">
+          <div className="text-5xl font-semibold tabular-nums">
+            {Math.round(totals.calories)}
+            <span className="text-lg font-normal text-zinc-500"> / {target} kcal</span>
           </div>
           <div className="text-sm text-zinc-500 tabular-nums">
             {Math.max(0, target - Math.round(totals.calories))} left
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
-          <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs_g} color="bg-amber-500" />
-          <MacroBar label="Protein" value={totals.protein} target={targets.protein_g} color="bg-sky-500" />
-          <MacroBar label="Fat" value={totals.fat} target={targets.fat_g} color="bg-rose-500" />
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          <MacroBar icon={Wheat} label="Carbs" value={totals.carbs} target={targets.carbs_g} color="bg-amber-500" />
+          <MacroBar icon={Drumstick} label="Protein" value={totals.protein} target={targets.protein_g} color="bg-sky-500" />
+          <MacroBar icon={Droplet} label="Fat" value={totals.fat} target={targets.fat_g} color="bg-rose-500" />
         </div>
       </section>
 
@@ -123,16 +134,35 @@ export default async function HomePage() {
           </ul>
         )}
       </section>
+
+      <section className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="text-sm font-medium text-zinc-500">Water</h2>
+        <WaterTracker date={today} initialMl={todaysMl} bottleMl={bottleMl} />
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-medium text-zinc-500">Weight</h2>
+          {todaysWeight !== null && (
+            <span className="text-xs text-zinc-500 tabular-nums">
+              Logged today: {Number(todaysWeight)} kg
+            </span>
+          )}
+        </div>
+        <WeightForm />
+      </section>
     </div>
   );
 }
 
 function MacroBar({
+  icon: Icon,
   label,
   value,
   target,
   color,
 }: {
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
   target: number;
@@ -142,7 +172,10 @@ function MacroBar({
   return (
     <div>
       <div className="flex justify-between text-xs text-zinc-500">
-        <span>{label}</span>
+        <span className="flex items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5" />
+          {label}
+        </span>
         <span className="tabular-nums">
           {Math.round(value)} / {target}g
         </span>
