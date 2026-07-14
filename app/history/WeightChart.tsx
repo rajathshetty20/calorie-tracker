@@ -11,14 +11,14 @@ import {
   CartesianGrid,
 } from "recharts";
 import { format, parseISO, subDays } from "date-fns";
-import WeekStats from "./WeekStats";
 import {
+  AXIS_PROPS,
   CHART_BODY,
+  ChartHeader,
   fmtFullDate,
   fmtTick,
-  RangeToggle,
   TooltipCard,
-  tickInterval,
+  xTickProps,
   type Range,
 } from "./chartParts";
 
@@ -49,13 +49,7 @@ export default function WeightChart({
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-medium text-zinc-500">Weight</h2>
-          <WeekStats avg={avg7} std={std7} />
-        </div>
-        <RangeToggle value={range} onChange={setRange} />
-      </div>
+      <ChartHeader title="Weight" avg={avg7} std={std7} range={range} onChange={setRange} />
 
       {data.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
@@ -66,26 +60,24 @@ export default function WeightChart({
       ) : (
         <div className={CHART_BODY}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
                   <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
                 tickFormatter={(v: string) => fmtTick(v, range)}
-                tick={{ fontSize: 11 }}
-                stroke="#a1a1aa"
-                interval={tickInterval(range)}
+                {...AXIS_PROPS}
+                {...xTickProps(range)}
               />
               <YAxis
                 domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
-                tick={{ fontSize: 11 }}
-                stroke="#a1a1aa"
-                width={42}
+                {...AXIS_PROPS}
+                width={38}
               />
               <Tooltip content={<WeightTooltip />} />
               <Area
@@ -95,7 +87,7 @@ export default function WeightChart({
                 strokeWidth={2.5}
                 fill="url(#weightGradient)"
                 dot={{ r: 3, fill: "#10b981" }}
-                activeDot={{ r: 5, fill: "#10b981", stroke: "white", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#10b981", stroke: "var(--chart-surface)", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>

@@ -55,9 +55,9 @@ export default function WaterTracker({
           onClick={() => setTo(ml - bottleMl)}
           disabled={pending || ml === 0}
           aria-label="Remove a bottle"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          <Minus className="h-3.5 w-3.5" />
+          <Minus className="h-4 w-4" />
         </button>
         <div className="min-w-[6.5rem] text-center text-sm tabular-nums">
           <span className="font-medium">{bottles}</span>{" "}
@@ -70,9 +70,9 @@ export default function WaterTracker({
           onClick={() => setTo(ml + bottleMl)}
           disabled={pending}
           aria-label="Add a bottle"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-sky-300 text-sky-600 transition-colors hover:bg-sky-50 disabled:opacity-40 dark:border-sky-900 dark:text-sky-400 dark:hover:bg-sky-950/40"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-sky-300 text-sky-600 transition-colors hover:bg-sky-50 disabled:opacity-40 dark:border-sky-900 dark:text-sky-400 dark:hover:bg-sky-950/40"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
         </button>
       </div>
       {error && <span className="text-xs text-red-600">{error}</span>}

@@ -20,7 +20,7 @@ export default function DeleteMealButton({ id }: { id: string }) {
       onClick={onDelete}
       disabled={pending}
       aria-label="Delete meal"
-      className="text-xs text-zinc-400 hover:text-red-600 disabled:opacity-50"
+      className="-my-1.5 rounded-md px-2 py-1.5 text-xs text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
     >
       Remove
     </button>

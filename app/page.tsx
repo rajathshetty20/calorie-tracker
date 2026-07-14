@@ -1,6 +1,7 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { mealCalories, type Meal, type Settings, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
+import CaloriesCard from "./CaloriesCard";
 import MealForm from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
 import WaterTracker from "./WaterTracker";
@@ -81,18 +82,7 @@ export default async function HomePage() {
         <p className="text-sm text-zinc-500">{today}</p>
       </header>
 
-      <section className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-6 shadow-sm dark:border-emerald-950/50 dark:from-emerald-950/30 dark:via-zinc-900 dark:to-zinc-900">
-        <div className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Calories today</div>
-        <div className="mt-2 flex items-baseline justify-between">
-          <div className="text-5xl font-semibold tabular-nums">
-            {Math.round(totals.calories)}
-            <span className="text-lg font-normal text-zinc-500"> / {target} kcal</span>
-          </div>
-          <div className="text-sm text-zinc-500 tabular-nums">
-            {Math.max(0, target - Math.round(totals.calories))} left
-          </div>
-        </div>
-      </section>
+      <CaloriesCard consumed={totals.calories} target={target} />
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="grid grid-cols-3 gap-3 text-sm">

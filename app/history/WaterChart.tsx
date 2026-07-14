@@ -10,14 +10,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import WeekStats from "./WeekStats";
 import {
+  AXIS_PROPS,
   CHART_BODY,
+  CHART_CURSOR,
+  ChartHeader,
   fmtFullDate,
   fmtTick,
-  RangeToggle,
   TooltipCard,
-  tickInterval,
+  xTickProps,
   type Range,
 } from "./chartParts";
 
@@ -37,32 +38,24 @@ export default function WaterChart({
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-medium text-zinc-500">Water</h2>
-          <WeekStats avg={avg7} std={std7} />
-        </div>
-        <RangeToggle value={range} onChange={setRange} />
-      </div>
+      <ChartHeader title="Water" avg={avg7} std={std7} range={range} onChange={setRange} />
 
       <div className={CHART_BODY}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={(v: string) => fmtTick(v, range)}
-              tick={{ fontSize: 11 }}
-              stroke="#a1a1aa"
-              interval={tickInterval(range)}
+              {...AXIS_PROPS}
+              {...xTickProps(range)}
             />
             <YAxis
-              tick={{ fontSize: 11 }}
-              stroke="#a1a1aa"
-              width={42}
+              {...AXIS_PROPS}
+              width={38}
               tickFormatter={(v: number) => `${v}L`}
             />
-            <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} content={<WaterTooltip />} />
+            <Tooltip cursor={CHART_CURSOR} content={<WaterTooltip />} />
             <Bar dataKey="litres" fill="#0ea5e9" name="Water" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

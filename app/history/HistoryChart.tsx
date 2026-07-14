@@ -12,13 +12,14 @@ import {
   YAxis,
 } from "recharts";
 import { format, parseISO } from "date-fns";
-import WeekStats from "./WeekStats";
 import {
+  AXIS_PROPS,
   CHART_BODY,
+  CHART_CURSOR,
+  ChartHeader,
   fmtTick,
-  RangeToggle,
   TooltipCard,
-  tickInterval,
+  xTickProps,
   type Range,
 } from "./chartParts";
 
@@ -50,33 +51,21 @@ export default function HistoryChart({
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-medium text-zinc-500">Calories</h2>
-          <WeekStats avg={avg7} std={std7} />
-        </div>
-        <RangeToggle value={range} onChange={setRange} />
-      </div>
+      <ChartHeader title="Calories" avg={avg7} std={std7} range={range} onChange={setRange} />
 
       <div className={CHART_BODY}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={(v: string) => fmtTick(v, range)}
-              tick={{ fontSize: 11 }}
-              stroke="#a1a1aa"
-              interval={tickInterval(range)}
+              {...AXIS_PROPS}
+              {...xTickProps(range)}
             />
-            <YAxis tick={{ fontSize: 11 }} stroke="#a1a1aa" width={42} />
-            <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} content={<MacroTooltip />} />
-            <ReferenceLine
-              y={target}
-              stroke="#71717a"
-              strokeDasharray="4 4"
-              label={{ value: `target ${target}`, position: "insideTopRight", fontSize: 11, fill: "#71717a" }}
-            />
+            <YAxis {...AXIS_PROPS} width={38} />
+            <Tooltip cursor={CHART_CURSOR} content={<MacroTooltip />} />
+            <ReferenceLine y={target} stroke="#71717a" strokeDasharray="4 4" />
             <Bar dataKey="carbs_kcal" stackId="kcal" fill="#f59e0b" name="Carbs" />
             <Bar dataKey="protein_kcal" stackId="kcal" fill="#0ea5e9" name="Protein" />
             <Bar dataKey="fat_kcal" stackId="kcal" fill="#f43f5e" name="Fat" radius={[4, 4, 0, 0]} />
@@ -88,6 +77,10 @@ export default function HistoryChart({
         <Legend color="bg-amber-500" label="Carbs" />
         <Legend color="bg-sky-500" label="Protein" />
         <Legend color="bg-rose-500" label="Fat" />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-4 border-t-2 border-dashed border-zinc-400 dark:border-zinc-500" />
+          Target {target}
+        </span>
       </div>
     </section>
   );
