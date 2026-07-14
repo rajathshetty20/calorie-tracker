@@ -1,9 +1,11 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { mealCalories, type Meal, type Settings, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
+import { mealCalories, type Exercise, type Meal, type Settings, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
 import CaloriesCard from "./CaloriesCard";
 import MealForm from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
+import ExerciseForm, { type ExercisePreset } from "./exercises/ExerciseForm";
+import DeleteExerciseButton from "./exercises/DeleteExerciseButton";
 import WaterTracker from "./WaterTracker";
 import WeightForm from "./WeightForm";
 
@@ -18,8 +20,15 @@ export default async function HomePage() {
   const supabase = await createClient();
   const today = todayISO();
 
-  const [{ data: meals }, { data: settings }, { data: recent }, { data: waterRow }, { data: weightRow }] =
-    await Promise.all([
+  const [
+    { data: meals },
+    { data: settings },
+    { data: recent },
+    { data: waterRow },
+    { data: weightRow },
+    { data: exercises },
+    { data: recentExercises },
+  ] = await Promise.all([
       supabase
         .from("meals")
         .select("*")
@@ -34,6 +43,16 @@ export default async function HomePage() {
         .limit(200),
       supabase.from("water").select("ml").eq("drank_on", today).maybeSingle(),
       supabase.from("weights").select("weight_kg").eq("measured_on", today).maybeSingle(),
+      supabase
+        .from("exercises")
+        .select("*")
+        .eq("performed_on", today)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("exercises")
+        .select("name,sets,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
     ]);
 
   const list = (meals ?? []) as Meal[];
@@ -54,6 +73,16 @@ export default async function HomePage() {
       protein_g: Number(r.protein_g),
       fat_g: Number(r.fat_g),
     });
+  }
+
+  const exerciseList = (exercises ?? []) as Exercise[];
+  const seenExercises = new Set<string>();
+  const exercisePresets: ExercisePreset[] = [];
+  for (const r of (recentExercises ?? []) as Pick<Exercise, "name" | "sets">[]) {
+    const key = r.name.trim().toLowerCase();
+    if (!key || seenExercises.has(key)) continue;
+    seenExercises.add(key);
+    exercisePresets.push({ name: r.name, sets: r.sets });
   }
 
   const totals = list.reduce(
@@ -123,6 +152,39 @@ export default async function HomePage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-zinc-500">Exercises today</h2>
+        {exerciseList.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700">
+            No exercises logged yet.
+          </p>
+        ) : (
+          <ul className="divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+            {exerciseList.map((ex) => (
+              <li key={ex.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">{ex.name}</div>
+                  <div className="truncate text-xs text-zinc-500 tabular-nums">
+                    {ex.sets.map((s) => `${s.weight_kg}kg × ${s.reps}`).join(" · ")}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-xs text-zinc-500 tabular-nums">
+                    {ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}
+                  </span>
+                  <DeleteExerciseButton id={ex.id} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="mb-3 text-sm font-medium text-zinc-500">Log exercise</h2>
+        <ExerciseForm presets={exercisePresets} />
       </section>
 
       <section className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

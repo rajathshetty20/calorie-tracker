@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { KCAL_PER_G, meanStd, type Meal, type Settings, type Water, type Weight } from "@/lib/types";
+import { KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type Water, type Weight } from "@/lib/types";
 import HistoryChart, { type DayRow } from "./HistoryChart";
 import WaterChart, { type WaterDay } from "./WaterChart";
 import WeightChart from "./WeightChart";
+import ExerciseChart from "./ExerciseChart";
 
 const LOOKBACK_DAYS = 90;
 const WEEK_DAYS = 7;
@@ -19,8 +20,13 @@ export default async function HistoryPage() {
   const start = isoDaysAgo(LOOKBACK_DAYS - 1);
   const end = isoDaysAgo(0);
 
-  const [{ data: meals }, { data: water }, { data: weights }, { data: settings }] =
-    await Promise.all([
+  const [
+    { data: meals },
+    { data: water },
+    { data: weights },
+    { data: settings },
+    { data: exercises },
+  ] = await Promise.all([
       supabase
         .from("meals")
         .select("*")
@@ -38,6 +44,12 @@ export default async function HistoryPage() {
         .select("*")
         .order("measured_on", { ascending: true }),
       supabase.from("settings").select("*").single(),
+      supabase
+        .from("exercises")
+        .select("*")
+        .gte("performed_on", start)
+        .lte("performed_on", end)
+        .order("performed_on", { ascending: true }),
     ]);
 
   const s = settings as Settings | null;
@@ -127,6 +139,8 @@ export default async function HistoryPage() {
         avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
         std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
       />
+
+      <ExerciseChart rows={(exercises ?? []) as Exercise[]} today={end} />
     </div>
   );
 }

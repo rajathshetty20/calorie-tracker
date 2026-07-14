@@ -25,6 +25,20 @@ export type Water = {
   created_at: string;
 };
 
+export type ExerciseSet = {
+  weight_kg: number;
+  reps: number;
+};
+
+export type Exercise = {
+  id: string;
+  user_id: string;
+  performed_on: string; // YYYY-MM-DD
+  name: string;
+  sets: ExerciseSet[];
+  created_at: string;
+};
+
 export type Settings = {
   user_id: string;
   target_calories: number;
@@ -44,6 +58,22 @@ export function mealCalories(m: Pick<Meal, "carbs_g" | "protein_g" | "fat_g">) {
     m.protein_g * KCAL_PER_G.protein +
     m.fat_g * KCAL_PER_G.fat
   );
+}
+
+export function exerciseVolume(sets: ExerciseSet[]) {
+  return sets.reduce((a, s) => a + s.weight_kg * s.reps, 0);
+}
+
+export function topSetWeight(sets: ExerciseSet[]) {
+  return sets.reduce((a, s) => Math.max(a, s.weight_kg), 0);
+}
+
+// Estimated one-rep max (Epley), best across the day's sets.
+export function estOneRepMax(sets: ExerciseSet[]) {
+  return sets.reduce((a, s) => {
+    const e = s.reps <= 1 ? s.weight_kg : s.weight_kg * (1 + s.reps / 30);
+    return Math.max(a, e);
+  }, 0);
 }
 
 // Mean and population standard deviation over a set of values.

@@ -37,6 +37,18 @@ create index if not exists water_user_day on public.water (user_id, drank_on des
 -- Ensure the volume column exists on databases created before this change.
 alter table public.water add column if not exists ml integer not null default 0 check (ml >= 0);
 
+-- One row per exercise entry per day. Sets are an ordered jsonb array of
+-- {"weight_kg": number, "reps": number}; the app derives top set / volume.
+create table if not exists public.exercises (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users on delete cascade,
+  performed_on date not null default current_date,
+  name text not null,
+  sets jsonb not null default '[]' check (jsonb_typeof(sets) = 'array'),
+  created_at timestamptz not null default now()
+);
+create index if not exists exercises_user_day on public.exercises (user_id, performed_on desc);
+
 create table if not exists public.settings (
   user_id uuid primary key references auth.users on delete cascade,
   target_calories integer not null default 2000 check (target_calories > 0),
@@ -54,11 +66,13 @@ grant select, insert, update, delete on public.meals to authenticated;
 grant select, insert, update, delete on public.weights to authenticated;
 grant select, insert, update, delete on public.water to authenticated;
 grant select, insert, update, delete on public.settings to authenticated;
+grant select, insert, update, delete on public.exercises to authenticated;
 
 alter table public.meals enable row level security;
 alter table public.weights enable row level security;
 alter table public.water enable row level security;
 alter table public.settings enable row level security;
+alter table public.exercises enable row level security;
 
 drop policy if exists "meals are owner-only" on public.meals;
 create policy "meals are owner-only" on public.meals
@@ -74,4 +88,8 @@ create policy "water is owner-only" on public.water
 
 drop policy if exists "settings are owner-only" on public.settings;
 create policy "settings are owner-only" on public.settings
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "exercises are owner-only" on public.exercises;
+create policy "exercises are owner-only" on public.exercises
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
