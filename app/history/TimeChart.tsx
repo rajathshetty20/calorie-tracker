@@ -1,0 +1,177 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { displayCategory, fmtDuration } from "@/lib/types";
+import {
+  AXIS_PROPS,
+  CHART_BODY,
+  CHART_CURSOR,
+  ChartHeader,
+  fmtFullDate,
+  fmtTick,
+  xTickProps,
+  type Range,
+} from "./chartParts";
+
+export type TimeDay = { date: string; totals: Record<string, number> };
+
+// Fixed assignment order; categories beyond the palette fold into "Other".
+const CAT_COLORS = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `var(--cat-${i})`);
+const OTHER = "other";
+const OTHER_COLOR = "var(--cat-other)";
+
+type ChartRow = { date: string } & Record<string, number | string>;
+
+export default function TimeChart({
+  rows,
+  avg7,
+  std7,
+}: {
+  rows: TimeDay[]; // continuous full lookback, ascending
+  avg7: string;
+  std7: string;
+}) {
+  const [range, setRange] = useState<Range>(30);
+
+  // Colors are assigned from total minutes over the FULL lookback so the
+  // range toggle never repaints a category.
+  const { named, folded } = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const r of rows) {
+      for (const [cat, min] of Object.entries(r.totals)) {
+        totals.set(cat, (totals.get(cat) ?? 0) + min);
+      }
+    }
+    const ordered = Array.from(totals.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat]) => cat);
+    return {
+      named: ordered.slice(0, CAT_COLORS.length),
+      folded: ordered.slice(CAT_COLORS.length),
+    };
+  }, [rows]);
+
+  const data = useMemo<ChartRow[]>(
+    () =>
+      rows.slice(-range).map((r) => {
+        const row: ChartRow = { date: r.date };
+        for (const cat of named) row[`c_${cat}`] = r.totals[cat] ?? 0;
+        if (folded.length > 0) {
+          row[`c_${OTHER}`] = folded.reduce((a, cat) => a + (r.totals[cat] ?? 0), 0);
+        }
+        return row;
+      }),
+    [rows, range, named, folded],
+  );
+
+  const series = [
+    ...named.map((cat, i) => ({ key: `c_${cat}`, label: displayCategory(cat), color: CAT_COLORS[i] })),
+    ...(folded.length > 0 ? [{ key: `c_${OTHER}`, label: "Other", color: OTHER_COLOR }] : []),
+  ];
+
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <ChartHeader title="Time" avg={avg7} std={std7} range={range} onChange={setRange} />
+
+      {named.length === 0 ? (
+        <div className={`${CHART_BODY} flex items-center justify-center`}>
+          <p className="text-center text-sm text-zinc-500">
+            No time tracked yet — log it on the Today page.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className={CHART_BODY}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v: string) => fmtTick(v, range)}
+                  {...AXIS_PROPS}
+                  {...xTickProps(range)}
+                />
+                <YAxis
+                  {...AXIS_PROPS}
+                  width={38}
+                  tickFormatter={(v: number) => `${Math.round((v / 60) * 10) / 10}h`}
+                />
+                <Tooltip cursor={CHART_CURSOR} content={<TimeTooltip series={series} />} />
+                {series.map((s, i) => (
+                  <Bar
+                    key={s.key}
+                    dataKey={s.key}
+                    stackId="time"
+                    name={s.label}
+                    fill={s.color}
+                    stroke="var(--chart-surface)"
+                    strokeWidth={1}
+                    radius={i === series.length - 1 ? [4, 4, 0, 0] : undefined}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-zinc-500">
+            {series.map((s) => (
+              <span key={s.key} className="inline-flex items-center gap-1.5">
+                <span
+                  className="inline-block h-2 w-2 rounded-sm"
+                  style={{ backgroundColor: s.color }}
+                />
+                {s.label}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+type Series = { key: string; label: string; color: string };
+type TooltipPayloadItem = { payload?: ChartRow };
+function TimeTooltip({
+  active,
+  payload,
+  label,
+  series,
+}: {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+  series: Series[];
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const row = payload[0].payload;
+  if (!row) return null;
+  const present = series
+    .map((s) => ({ ...s, minutes: Number(row[s.key]) || 0 }))
+    .filter((s) => s.minutes > 0);
+  if (present.length === 0) return null;
+  const total = present.reduce((a, s) => a + s.minutes, 0);
+  return (
+    <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="mb-1 font-medium">{fmtFullDate(label)}</div>
+      <div className="tabular-nums">Total: {fmtDuration(total)}</div>
+      <div className="mt-1 space-y-0.5">
+        {present.map((s) => (
+          <div key={s.key} className="flex items-center gap-1.5 tabular-nums text-zinc-500">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: s.color }} />
+            <span>{s.label}</span>
+            <span className="ml-auto pl-3">{fmtDuration(s.minutes)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

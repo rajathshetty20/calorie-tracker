@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type Water, type Weight } from "@/lib/types";
+import { fmtDuration, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
 import HistoryChart, { type DayRow } from "./HistoryChart";
 import WaterChart, { type WaterDay } from "./WaterChart";
 import WeightChart from "./WeightChart";
 import ExerciseChart from "./ExerciseChart";
+import TimeChart, { type TimeDay } from "./TimeChart";
 
 const LOOKBACK_DAYS = 90;
 const WEEK_DAYS = 7;
@@ -26,6 +27,7 @@ export default async function HistoryPage() {
     { data: weights },
     { data: settings },
     { data: exercises },
+    { data: timeEntries },
   ] = await Promise.all([
       supabase
         .from("meals")
@@ -50,6 +52,12 @@ export default async function HistoryPage() {
         .gte("performed_on", start)
         .lte("performed_on", end)
         .order("performed_on", { ascending: true }),
+      supabase
+        .from("time_entries")
+        .select("*")
+        .gte("spent_on", start)
+        .lte("spent_on", end)
+        .order("spent_on", { ascending: true }),
     ]);
 
   const s = settings as Settings | null;
@@ -58,6 +66,7 @@ export default async function HistoryPage() {
   // Build a continuous date axis so missing days render as gaps / zero bars.
   const byDay = new Map<string, DayRow>();
   const waterByDay = new Map<string, WaterDay>();
+  const timeByDay = new Map<string, TimeDay>();
   for (let i = 0; i < LOOKBACK_DAYS; i++) {
     const date = isoDaysAgo(LOOKBACK_DAYS - 1 - i);
     byDay.set(date, {
@@ -71,6 +80,7 @@ export default async function HistoryPage() {
       total_kcal: 0,
     });
     waterByDay.set(date, { date, litres: 0 });
+    timeByDay.set(date, { date, totals: {} });
   }
 
   for (const m of (meals ?? []) as Meal[]) {
@@ -94,8 +104,15 @@ export default async function HistoryPage() {
     row.litres += Number(w.ml) / 1000;
   }
 
+  for (const t of (timeEntries ?? []) as TimeEntry[]) {
+    const row = timeByDay.get(t.spent_on);
+    if (!row) continue;
+    row.totals[t.category] = (row.totals[t.category] ?? 0) + t.minutes;
+  }
+
   const rows = Array.from(byDay.values());
   const waterRows = Array.from(waterByDay.values());
+  const timeRows = Array.from(timeByDay.values());
   const weightSeries = ((weights ?? []) as Weight[]).map((w) => ({
     date: w.measured_on,
     kg: Number(w.weight_kg),
@@ -111,6 +128,12 @@ export default async function HistoryPage() {
   );
   const weightStats = meanStd(
     weightSeries.filter((w) => w.date >= weekCutoff).map((w) => w.kg),
+  );
+  const timeStats = meanStd(
+    timeRows
+      .slice(-WEEK_DAYS)
+      .map((r) => Object.values(r.totals).reduce((a, b) => a + b, 0))
+      .filter((total) => total > 0),
   );
 
   return (
@@ -141,6 +164,12 @@ export default async function HistoryPage() {
       />
 
       <ExerciseChart rows={(exercises ?? []) as Exercise[]} today={end} />
+
+      <TimeChart
+        rows={timeRows}
+        avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
+        std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"}
+      />
     </div>
   );
 }

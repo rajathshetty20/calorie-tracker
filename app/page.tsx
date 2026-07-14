@@ -1,11 +1,13 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { mealCalories, type Exercise, type Meal, type Settings, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
+import { displayCategory, fmtDuration, mealCalories, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
 import CaloriesCard from "./CaloriesCard";
 import MealForm from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
 import ExerciseForm, { type ExercisePreset } from "./exercises/ExerciseForm";
 import DeleteExerciseButton from "./exercises/DeleteExerciseButton";
+import TimeForm from "./time/TimeForm";
+import DeleteTimeEntryButton from "./time/DeleteTimeEntryButton";
 import WaterTracker from "./WaterTracker";
 import WeightForm from "./WeightForm";
 
@@ -28,6 +30,8 @@ export default async function HomePage() {
     { data: weightRow },
     { data: exercises },
     { data: recentExercises },
+    { data: timeEntries },
+    { data: recentTime },
   ] = await Promise.all([
       supabase
         .from("meals")
@@ -51,6 +55,16 @@ export default async function HomePage() {
       supabase
         .from("exercises")
         .select("name,sets,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("time_entries")
+        .select("*")
+        .eq("spent_on", today)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("time_entries")
+        .select("category,created_at")
         .order("created_at", { ascending: false })
         .limit(200),
     ]);
@@ -84,6 +98,11 @@ export default async function HomePage() {
     seenExercises.add(key);
     exercisePresets.push({ name: r.name, sets: r.sets });
   }
+
+  const timeList = (timeEntries ?? []) as TimeEntry[];
+  const timeCategories = Array.from(
+    new Set(((recentTime ?? []) as Pick<TimeEntry, "category">[]).map((t) => t.category)),
+  );
 
   const totals = list.reduce(
     (acc, m) => ({
@@ -185,6 +204,31 @@ export default async function HomePage() {
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="mb-3 text-sm font-medium text-zinc-500">Log exercise</h2>
         <ExerciseForm presets={exercisePresets} />
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-medium text-zinc-500">Time</h2>
+          {timeList.length > 0 && (
+            <span className="text-xs text-zinc-500 tabular-nums">
+              {fmtDuration(timeList.reduce((a, t) => a + t.minutes, 0))} tracked
+            </span>
+          )}
+        </div>
+        {timeList.length > 0 && (
+          <ul className="mb-3 divide-y divide-zinc-100 dark:divide-zinc-800">
+            {timeList.map((t) => (
+              <li key={t.id} className="flex items-center justify-between gap-3 py-2">
+                <span className="text-sm">{displayCategory(t.category)}</span>
+                <span className="flex items-center gap-3">
+                  <span className="text-sm text-zinc-500 tabular-nums">{fmtDuration(t.minutes)}</span>
+                  <DeleteTimeEntryButton id={t.id} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <TimeForm date={today} categories={timeCategories} />
       </section>
 
       <section className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

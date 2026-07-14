@@ -49,6 +49,19 @@ create table if not exists public.exercises (
 );
 create index if not exists exercises_user_day on public.exercises (user_id, performed_on desc);
 
+-- Time spent per day per category (category is stored lowercase; one row
+-- per user+day+category, updated in place).
+create table if not exists public.time_entries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users on delete cascade,
+  spent_on date not null default current_date,
+  category text not null,
+  minutes integer not null check (minutes > 0),
+  created_at timestamptz not null default now(),
+  unique (user_id, spent_on, category)
+);
+create index if not exists time_entries_user_day on public.time_entries (user_id, spent_on desc);
+
 create table if not exists public.settings (
   user_id uuid primary key references auth.users on delete cascade,
   target_calories integer not null default 2000 check (target_calories > 0),
@@ -67,12 +80,14 @@ grant select, insert, update, delete on public.weights to authenticated;
 grant select, insert, update, delete on public.water to authenticated;
 grant select, insert, update, delete on public.settings to authenticated;
 grant select, insert, update, delete on public.exercises to authenticated;
+grant select, insert, update, delete on public.time_entries to authenticated;
 
 alter table public.meals enable row level security;
 alter table public.weights enable row level security;
 alter table public.water enable row level security;
 alter table public.settings enable row level security;
 alter table public.exercises enable row level security;
+alter table public.time_entries enable row level security;
 
 drop policy if exists "meals are owner-only" on public.meals;
 create policy "meals are owner-only" on public.meals
@@ -92,4 +107,8 @@ create policy "settings are owner-only" on public.settings
 
 drop policy if exists "exercises are owner-only" on public.exercises;
 create policy "exercises are owner-only" on public.exercises
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "time entries are owner-only" on public.time_entries;
+create policy "time entries are owner-only" on public.time_entries
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

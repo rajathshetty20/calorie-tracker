@@ -39,6 +39,15 @@ export type Exercise = {
   created_at: string;
 };
 
+export type TimeEntry = {
+  id: string;
+  user_id: string;
+  spent_on: string; // YYYY-MM-DD
+  category: string; // stored lowercase
+  minutes: number;
+  created_at: string;
+};
+
 export type Settings = {
   user_id: string;
   target_calories: number;
@@ -74,6 +83,19 @@ export function estOneRepMax(sets: ExerciseSet[]) {
     const e = s.reps <= 1 ? s.weight_kg : s.weight_kg * (1 + s.reps / 30);
     return Math.max(a, e);
   }, 0);
+}
+
+export function fmtDuration(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
+
+// Categories are stored lowercase; show them with a leading capital.
+export function displayCategory(category: string) {
+  return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
 // Mean and population standard deviation over a set of values.
