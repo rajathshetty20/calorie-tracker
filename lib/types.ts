@@ -98,11 +98,17 @@ export function plural(n: number, word: string, pluralWord = `${word}s`) {
   return `${n} ${n === 1 ? word : pluralWord}`;
 }
 
-// Local YYYY-MM-DD for "today".
-export function todayISO() {
+// Local YYYY-MM-DD, n days ago.
+export function isoDaysAgo(n: number) {
   const d = new Date();
+  d.setDate(d.getDate() - n);
   const tz = d.getTimezoneOffset() * 60_000;
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
+
+// Local YYYY-MM-DD for "today".
+export function todayISO() {
+  return isoDaysAgo(0);
 }
 
 // Categories are stored lowercase; show them with a leading capital.

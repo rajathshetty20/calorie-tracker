@@ -20,6 +20,7 @@ A self-hosted personal health dashboard: log **meals & macros, water, weight, ex
 - **Time tracking** — minutes per free-form category per day (sleep, work, …), shown as a stacked history chart.
 - **History** — 90-day charts for everything, each with a 7-day average ± standard deviation.
 - **At-a-glance dashboard** — today's status (calories, macros, water, weight, exercise, time) is visible without scrolling; add-forms are collapsed behind `+ Add` disclosures.
+- **Public demo** — `/demo` mirrors Today and History with a deterministic 90-day sample dataset, reached via a "Browse the demo" link on the login page. An amber banner and nav badge mark the mode, and every write affordance becomes a sign-in prompt. Nothing in demo mode touches the database.
 - Dark mode, responsive layout, and optimistic updates where it matters (water taps).
 
 ## How it's built
@@ -73,11 +74,13 @@ app/
   exercises/             # ExerciseForm with set rows + prefill, delete
   time/                  # TimeForm (per-category daily upsert), delete
   history/               # 90-day charts: calories, water, weight, exercise, time
+  demo/                  # Public demo mirrors of Today + History (sample data)
   settings/              # Target calories, macro split, bottle size
-  login/                 # Magic-link form
+  login/                 # Magic-link form + demo entry link
   auth/                  # OAuth callback + signout routes
 lib/
   supabase/              # Browser/server clients + middleware helper
+  demo-data.ts           # Seeded 90-day sample dataset for demo mode
   types.ts               # Row types, kcal math, 1RM estimate, mean/std
 supabase/schema.sql      # Tables + RLS policies
 middleware.ts            # Session refresh + redirect to /login
@@ -89,3 +92,4 @@ middleware.ts            # Session refresh + redirect to /login
 - **Macros in, calories out.** Storing grams and deriving kcal keeps a single source of truth and makes the macro-split targets exact.
 - **Your history is the food database.** No third-party nutrition API — autocomplete is powered by your own past entries, which converges on your real diet fast and works offline from any food DB quirks.
 - **Single-user by design.** RLS scopes every row to the signed-in user, and signups can be disabled after first login — a personal tool with real auth, not a demo with none.
+- **Demo mode is explicit, not implicit.** Logged-out visitors land on the login page and opt into `/demo`; the demo renders the same page components from an in-memory seeded dataset, so it can never write and never drifts from the real UI.

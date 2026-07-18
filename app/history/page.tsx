@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { fmtDuration, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
+import { demoData } from "@/lib/demo-data";
+import { fmtDuration, isoDaysAgo, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
+import DemoBanner from "../DemoBanner";
 import HistoryChart, { type DayRow } from "./HistoryChart";
 import WaterChart, { type WaterDay } from "./WaterChart";
 import WeightChart from "./WeightChart";
@@ -9,17 +11,35 @@ import TimeChart, { type TimeDay } from "./TimeChart";
 const LOOKBACK_DAYS = 90;
 const WEEK_DAYS = 7;
 
-function isoDaysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  const tz = d.getTimezoneOffset() * 60_000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
+type HistoryData = {
+  isDemo: boolean;
+  meals: Meal[];
+  water: Water[];
+  weights: Weight[];
+  settings: Settings | null;
+  exercises: Exercise[];
+  timeEntries: TimeEntry[];
+};
 
-export default async function HistoryPage() {
+async function loadHistory(start: string, end: string): Promise<HistoryData> {
   const supabase = await createClient();
-  const start = isoDaysAgo(LOOKBACK_DAYS - 1);
-  const end = isoDaysAgo(0);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    const demo = demoData();
+    const inRange = (d: string) => d >= start && d <= end;
+    return {
+      isDemo: true,
+      meals: demo.meals.filter((m) => inRange(m.eaten_on)),
+      water: demo.water.filter((w) => inRange(w.drank_on)),
+      weights: demo.weights,
+      settings: demo.settings,
+      exercises: demo.exercises.filter((e) => inRange(e.performed_on)),
+      timeEntries: demo.timeEntries.filter((t) => inRange(t.spent_on)),
+    };
+  }
 
   const [
     { data: meals },
@@ -60,7 +80,23 @@ export default async function HistoryPage() {
         .order("spent_on", { ascending: true }),
     ]);
 
-  const s = settings as Settings | null;
+  return {
+    isDemo: false,
+    meals: (meals ?? []) as Meal[],
+    water: (water ?? []) as Water[],
+    weights: (weights ?? []) as Weight[],
+    settings: settings as Settings | null,
+    exercises: (exercises ?? []) as Exercise[],
+    timeEntries: (timeEntries ?? []) as TimeEntry[],
+  };
+}
+
+export default async function HistoryPage() {
+  const start = isoDaysAgo(LOOKBACK_DAYS - 1);
+  const end = isoDaysAgo(0);
+  const { isDemo, meals, water, weights, settings: s, exercises, timeEntries } =
+    await loadHistory(start, end);
+
   const target = s?.target_calories ?? 2000;
 
   // Build a continuous date axis so missing days render as gaps / zero bars.
@@ -83,7 +119,7 @@ export default async function HistoryPage() {
     timeByDay.set(date, { date, totals: {} });
   }
 
-  for (const m of (meals ?? []) as Meal[]) {
+  for (const m of meals) {
     const row = byDay.get(m.eaten_on);
     if (!row) continue;
     const c = Number(m.carbs_g);
@@ -98,13 +134,13 @@ export default async function HistoryPage() {
     row.total_kcal += c * KCAL_PER_G.carbs + p * KCAL_PER_G.protein + f * KCAL_PER_G.fat;
   }
 
-  for (const w of (water ?? []) as Water[]) {
+  for (const w of water) {
     const row = waterByDay.get(w.drank_on);
     if (!row) continue;
     row.litres += Number(w.ml) / 1000;
   }
 
-  for (const t of (timeEntries ?? []) as TimeEntry[]) {
+  for (const t of timeEntries) {
     const row = timeByDay.get(t.spent_on);
     if (!row) continue;
     row.totals[t.category] = (row.totals[t.category] ?? 0) + t.minutes;
@@ -113,7 +149,7 @@ export default async function HistoryPage() {
   const rows = Array.from(byDay.values());
   const waterRows = Array.from(waterByDay.values());
   const timeRows = Array.from(timeByDay.values());
-  const weightSeries = ((weights ?? []) as Weight[]).map((w) => ({
+  const weightSeries = weights.map((w) => ({
     date: w.measured_on,
     kg: Number(w.weight_kg),
   }));
@@ -138,6 +174,8 @@ export default async function HistoryPage() {
 
   return (
     <div className="space-y-6">
+      {isDemo && <DemoBanner />}
+
       <header>
         <h1 className="text-2xl font-semibold">History</h1>
         <p className="text-sm text-zinc-500">Calories, water, weight, exercise, and time.</p>
@@ -163,7 +201,7 @@ export default async function HistoryPage() {
         std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
       />
 
-      <ExerciseChart rows={(exercises ?? []) as Exercise[]} today={end} />
+      <ExerciseChart rows={exercises} today={end} />
 
       <TimeChart
         rows={timeRows}

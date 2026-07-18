@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Logo from "../Logo";
 
@@ -60,6 +61,15 @@ export default function LoginPage() {
         {status === "error" && error && (
           <p className="text-sm text-red-600">{error}</p>
         )}
+        <p className="border-t border-zinc-200 pt-4 text-center text-sm text-zinc-500 dark:border-zinc-800">
+          Just looking?{" "}
+          <Link
+            href="/demo"
+            className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
+          >
+            Browse the demo
+          </Link>
+        </p>
       </form>
     </div>
   );

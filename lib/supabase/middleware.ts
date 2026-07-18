@@ -31,14 +31,17 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthRoute = path.startsWith("/login") || path.startsWith("/auth");
+  // /demo mirrors Today + History with sample data, entered from the login
+  // page — signed-out visitors never land in it implicitly.
+  const isDemoRoute = path === "/demo" || path.startsWith("/demo/");
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && !isDemoRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && path === "/login") {
+  if (user && (path === "/login" || isDemoRoute)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

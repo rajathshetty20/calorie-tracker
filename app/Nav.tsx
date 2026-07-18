@@ -9,21 +9,33 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-const links: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/", label: "Today", icon: LayoutDashboard },
-  { href: "/history", label: "History", icon: History },
-  { href: "/settings", label: "Settings", icon: Settings },
+// Inside /demo the same tabs point at the demo mirrors; Settings stays
+// gated and lands on the login page.
+const links: { base: string; demo: string; label: string; icon: LucideIcon }[] = [
+  { base: "/", demo: "/demo", label: "Today", icon: LayoutDashboard },
+  { base: "/history", demo: "/demo/history", label: "History", icon: History },
+  { base: "/settings", demo: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Nav() {
   const pathname = usePathname();
+  const inDemo = pathname === "/demo" || pathname.startsWith("/demo/");
   return (
-    <div className="flex flex-wrap gap-x-1 gap-y-1 text-sm">
-      {links.map(({ href, label, icon: Icon }) => {
-        const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+      {inDemo && (
+        <span className="mr-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          Demo
+        </span>
+      )}
+      {links.map(({ base, demo, label, icon: Icon }) => {
+        const href = inDemo ? demo : base;
+        const isActive =
+          href === "/" || href === "/demo"
+            ? pathname === href
+            : pathname.startsWith(href);
         return (
           <Link
-            key={href}
+            key={base}
             href={href}
             className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors ${
               isActive

@@ -1,8 +1,9 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { demoData } from "@/lib/demo-data";
 import { displayCategory, fmtDuration, mealCalories, plural, todayISO, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
 import CaloriesCard from "./CaloriesCard";
-import MealForm from "./meals/MealForm";
+import MealForm, { type MealPreset } from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
 import ExerciseForm, { type ExercisePreset } from "./exercises/ExerciseForm";
 import DeleteExerciseButton from "./exercises/DeleteExerciseButton";
@@ -12,10 +13,50 @@ import WaterTracker from "./WaterTracker";
 import WeightForm from "./WeightForm";
 import AddDisclosure from "./AddDisclosure";
 import Tile from "./Tile";
+import DemoBanner from "./DemoBanner";
+import SignInPrompt from "./SignInPrompt";
 
-export default async function HomePage() {
+type RecentMeal = Pick<Meal, "name" | "carbs_g" | "protein_g" | "fat_g">;
+type RecentExercise = Pick<Exercise, "name" | "sets">;
+
+type TodayData = {
+  isDemo: boolean;
+  meals: Meal[];
+  settings: Settings | null;
+  recentMeals: RecentMeal[];
+  waterMl: number;
+  weightKg: number | null;
+  exercises: Exercise[];
+  recentExercises: RecentExercise[];
+  timeEntries: TimeEntry[];
+  recentTimeCategories: string[];
+};
+
+async function loadToday(today: string): Promise<TodayData> {
   const supabase = await createClient();
-  const today = todayISO();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    // Demo mode: same shapes, sample data. Recent-entry presets stay empty
+    // because logging is replaced by sign-in prompts.
+    const demo = demoData();
+    const desc = (a: { created_at: string }, b: { created_at: string }) =>
+      b.created_at.localeCompare(a.created_at);
+    return {
+      isDemo: true,
+      meals: demo.meals.filter((m) => m.eaten_on === today).sort(desc),
+      settings: demo.settings,
+      recentMeals: [],
+      waterMl: demo.water.find((w) => w.drank_on === today)?.ml ?? 0,
+      weightKg: demo.weights.find((w) => w.measured_on === today)?.weight_kg ?? null,
+      exercises: demo.exercises.filter((e) => e.performed_on === today).sort(desc),
+      recentExercises: [],
+      timeEntries: demo.timeEntries.filter((t) => t.spent_on === today),
+      recentTimeCategories: [],
+    };
+  }
 
   const [
     { data: meals },
@@ -64,15 +105,42 @@ export default async function HomePage() {
         .limit(200),
     ]);
 
-  const list = (meals ?? []) as Meal[];
-  const s = settings as Settings | null;
+  return {
+    isDemo: false,
+    meals: (meals ?? []) as Meal[],
+    settings: settings as Settings | null,
+    recentMeals: (recent ?? []) as RecentMeal[],
+    waterMl: (waterRow as Pick<Water, "ml"> | null)?.ml ?? 0,
+    weightKg: (weightRow as Pick<Weight, "weight_kg"> | null)?.weight_kg ?? null,
+    exercises: (exercises ?? []) as Exercise[],
+    recentExercises: (recentExercises ?? []) as RecentExercise[],
+    timeEntries: (timeEntries ?? []) as TimeEntry[],
+    recentTimeCategories: Array.from(
+      new Set(((recentTime ?? []) as Pick<TimeEntry, "category">[]).map((t) => t.category)),
+    ),
+  };
+}
+
+export default async function HomePage() {
+  const today = todayISO();
+  const {
+    isDemo,
+    meals: list,
+    settings: s,
+    recentMeals,
+    waterMl: todaysMl,
+    weightKg: todaysWeight,
+    exercises: exerciseList,
+    recentExercises,
+    timeEntries: timeList,
+    recentTimeCategories: timeCategories,
+  } = await loadToday(today);
+
   const bottleMl = s?.bottle_ml ?? 1000;
-  const todaysMl = (waterRow as Pick<Water, "ml"> | null)?.ml ?? 0;
-  const todaysWeight = (weightRow as Pick<Weight, "weight_kg"> | null)?.weight_kg ?? null;
 
   const seen = new Set<string>();
-  const presets: { name: string; carbs_g: number; protein_g: number; fat_g: number }[] = [];
-  for (const r of (recent ?? []) as Pick<Meal, "name" | "carbs_g" | "protein_g" | "fat_g">[]) {
+  const presets: MealPreset[] = [];
+  for (const r of recentMeals) {
     const key = (r.name ?? "").trim().toLowerCase();
     if (!key || seen.has(key)) continue;
     seen.add(key);
@@ -84,20 +152,14 @@ export default async function HomePage() {
     });
   }
 
-  const exerciseList = (exercises ?? []) as Exercise[];
   const seenExercises = new Set<string>();
   const exercisePresets: ExercisePreset[] = [];
-  for (const r of (recentExercises ?? []) as Pick<Exercise, "name" | "sets">[]) {
+  for (const r of recentExercises) {
     const key = r.name.trim().toLowerCase();
     if (!key || seenExercises.has(key)) continue;
     seenExercises.add(key);
     exercisePresets.push({ name: r.name, sets: r.sets });
   }
-
-  const timeList = (timeEntries ?? []) as TimeEntry[];
-  const timeCategories = Array.from(
-    new Set(((recentTime ?? []) as Pick<TimeEntry, "category">[]).map((t) => t.category)),
-  );
 
   const totals = list.reduce(
     (acc, m) => ({
@@ -128,9 +190,12 @@ export default async function HomePage() {
   const timeLabel = timeList.length > 0 ? fmtDuration(timeTotal) : null;
   const weightLabel = todaysWeight !== null ? `${Number(todaysWeight)} kg` : null;
   const mealsSummary = list.length > 0 ? `${Math.round(totals.calories)} kcal` : null;
+  const bottles = bottleMl > 0 ? Math.round((todaysMl / bottleMl) * 10) / 10 : 0;
 
   return (
     <div className="space-y-6">
+      {isDemo && <DemoBanner />}
+
       <header>
         <h1 className="text-2xl font-semibold">Today</h1>
         <p className="text-sm text-zinc-500">{today}</p>
@@ -148,16 +213,24 @@ export default async function HomePage() {
 
       {/* At a glance: water is tap-to-log, the rest summarize the sections below. */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Tile label="Water">
-          {/* Remount when the server value changes so a stale tab (other
-              device, day rollover) can't upsert from an outdated total. */}
-          <WaterTracker
-            key={`${today}:${todaysMl}`}
-            date={today}
-            initialMl={todaysMl}
-            bottleMl={bottleMl}
+        {isDemo ? (
+          <Tile
+            label="Water"
+            value={`${(todaysMl / 1000).toFixed(1)} L`}
+            sub={plural(bottles, "bottle")}
           />
-        </Tile>
+        ) : (
+          <Tile label="Water">
+            {/* Remount when the server value changes so a stale tab (other
+                device, day rollover) can't upsert from an outdated total. */}
+            <WaterTracker
+              key={`${today}:${todaysMl}`}
+              date={today}
+              initialMl={todaysMl}
+              bottleMl={bottleMl}
+            />
+          </Tile>
+        )}
         <Tile label="Weight" value={weightLabel} sub={weightLabel && "logged today"} />
         <Tile
           label="Exercise"
@@ -188,15 +261,19 @@ export default async function HomePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm tabular-nums">{Math.round(mealCalories(m))} kcal</span>
-                  <DeleteMealButton id={m.id} />
+                  {!isDemo && <DeleteMealButton id={m.id} />}
                 </div>
               </li>
             ))}
           </ul>
         )}
-        <AddDisclosure label="Add meal">
-          <MealForm presets={presets} />
-        </AddDisclosure>
+        {isDemo ? (
+          <SignInPrompt label="Sign in to log meals" />
+        ) : (
+          <AddDisclosure label="Add meal">
+            <MealForm presets={presets} />
+          </AddDisclosure>
+        )}
       </Section>
 
       <Section title="Exercise" summary={exerciseSummary}>
@@ -216,15 +293,19 @@ export default async function HomePage() {
                   <span className="text-xs text-zinc-500 tabular-nums">
                     {plural(ex.sets.length, "set")}
                   </span>
-                  <DeleteExerciseButton id={ex.id} />
+                  {!isDemo && <DeleteExerciseButton id={ex.id} />}
                 </div>
               </li>
             ))}
           </ul>
         )}
-        <AddDisclosure label="Log exercise">
-          <ExerciseForm presets={exercisePresets} />
-        </AddDisclosure>
+        {isDemo ? (
+          <SignInPrompt label="Sign in to log exercise" />
+        ) : (
+          <AddDisclosure label="Log exercise">
+            <ExerciseForm presets={exercisePresets} />
+          </AddDisclosure>
+        )}
       </Section>
 
       <div className="grid gap-6 md:grid-cols-2 md:items-start">
@@ -238,21 +319,29 @@ export default async function HomePage() {
                   <span className="text-sm">{displayCategory(t.category)}</span>
                   <span className="flex items-center gap-3">
                     <span className="text-sm text-zinc-500 tabular-nums">{fmtDuration(t.minutes)}</span>
-                    <DeleteTimeEntryButton id={t.id} />
+                    {!isDemo && <DeleteTimeEntryButton id={t.id} />}
                   </span>
                 </li>
               ))}
             </ul>
           )}
-          <AddDisclosure label="Add time">
-            <TimeForm date={today} categories={timeCategories} />
-          </AddDisclosure>
+          {isDemo ? (
+            <SignInPrompt label="Sign in to track time" />
+          ) : (
+            <AddDisclosure label="Add time">
+              <TimeForm date={today} categories={timeCategories} />
+            </AddDisclosure>
+          )}
         </Section>
 
         <Section title="Weight" summary={weightLabel && `${weightLabel} today`}>
-          <AddDisclosure label="Log weight">
-            <WeightForm />
-          </AddDisclosure>
+          {isDemo ? (
+            <SignInPrompt label="Sign in to log weight" />
+          ) : (
+            <AddDisclosure label="Log weight">
+              <WeightForm />
+            </AddDisclosure>
+          )}
         </Section>
       </div>
     </div>
