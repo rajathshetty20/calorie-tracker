@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Logo from "../Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -31,9 +32,12 @@ export default function LoginPage() {
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
       >
-        <div>
-          <h1 className="text-xl font-semibold">Daily tracker</h1>
-          <p className="text-sm text-zinc-500">Sign in with a magic link.</p>
+        <div className="flex items-center gap-3">
+          <Logo className="h-9 w-9 shrink-0" />
+          <div>
+            <h1 className="text-xl font-semibold">Daily tracker</h1>
+            <p className="text-sm text-zinc-500">Sign in with a magic link.</p>
+          </div>
         </div>
         <input
           type="email"
