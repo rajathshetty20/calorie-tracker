@@ -43,7 +43,7 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
-      setError("Not signed in");
+      setError("Saving is disabled in the demo — sign in to track your own.");
       return;
     }
     const { error } = await supabase.from("meals").insert({

@@ -1,19 +1,28 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function DeleteExerciseButton({ id }: { id: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [blocked, setBlocked] = useState(false);
 
   async function onDelete() {
     const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      setBlocked(true); // demo mode: reads only
+      return;
+    }
     await supabase.from("exercises").delete().eq("id", id);
     startTransition(() => router.refresh());
   }
 
+  if (blocked) {
+    return <span className="text-xs text-amber-600 dark:text-amber-400">read-only</span>;
+  }
   return (
     <button
       type="button"

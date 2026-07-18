@@ -14,7 +14,6 @@ import WeightForm from "./WeightForm";
 import AddDisclosure from "./AddDisclosure";
 import Tile from "./Tile";
 import DemoBanner from "./DemoBanner";
-import SignInPrompt from "./SignInPrompt";
 
 type RecentMeal = Pick<Meal, "name" | "carbs_g" | "protein_g" | "fat_g">;
 type RecentExercise = Pick<Exercise, "name" | "sets">;
@@ -39,8 +38,9 @@ async function loadToday(today: string): Promise<TodayData> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // Demo mode: same shapes, sample data. Recent-entry presets stay empty
-    // because logging is replaced by sign-in prompts.
+    // Demo mode: same shapes, sample data — including recent-entry presets
+    // so the autocomplete dropdowns are fully explorable. Saves are blocked
+    // in the forms themselves (no session).
     const demo = demoData();
     const desc = (a: { created_at: string }, b: { created_at: string }) =>
       b.created_at.localeCompare(a.created_at);
@@ -48,13 +48,13 @@ async function loadToday(today: string): Promise<TodayData> {
       isDemo: true,
       meals: demo.meals.filter((m) => m.eaten_on === today).sort(desc),
       settings: demo.settings,
-      recentMeals: [],
+      recentMeals: [...demo.meals].sort(desc),
       waterMl: demo.water.find((w) => w.drank_on === today)?.ml ?? 0,
       weightKg: demo.weights.find((w) => w.measured_on === today)?.weight_kg ?? null,
       exercises: demo.exercises.filter((e) => e.performed_on === today).sort(desc),
-      recentExercises: [],
+      recentExercises: [...demo.exercises].sort(desc),
       timeEntries: demo.timeEntries.filter((t) => t.spent_on === today),
-      recentTimeCategories: [],
+      recentTimeCategories: Array.from(new Set(demo.timeEntries.map((t) => t.category))),
     };
   }
 
@@ -190,7 +190,6 @@ export default async function HomePage() {
   const timeLabel = timeList.length > 0 ? fmtDuration(timeTotal) : null;
   const weightLabel = todaysWeight !== null ? `${Number(todaysWeight)} kg` : null;
   const mealsSummary = list.length > 0 ? `${Math.round(totals.calories)} kcal` : null;
-  const bottles = bottleMl > 0 ? Math.round((todaysMl / bottleMl) * 10) / 10 : 0;
 
   return (
     <div className="space-y-6">
@@ -213,24 +212,16 @@ export default async function HomePage() {
 
       {/* At a glance: water is tap-to-log, the rest summarize the sections below. */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {isDemo ? (
-          <Tile
-            label="Water"
-            value={`${(todaysMl / 1000).toFixed(1)} L`}
-            sub={plural(bottles, "bottle")}
+        <Tile label="Water">
+          {/* Remount when the server value changes so a stale tab (other
+              device, day rollover) can't upsert from an outdated total. */}
+          <WaterTracker
+            key={`${today}:${todaysMl}`}
+            date={today}
+            initialMl={todaysMl}
+            bottleMl={bottleMl}
           />
-        ) : (
-          <Tile label="Water">
-            {/* Remount when the server value changes so a stale tab (other
-                device, day rollover) can't upsert from an outdated total. */}
-            <WaterTracker
-              key={`${today}:${todaysMl}`}
-              date={today}
-              initialMl={todaysMl}
-              bottleMl={bottleMl}
-            />
-          </Tile>
-        )}
+        </Tile>
         <Tile label="Weight" value={weightLabel} sub={weightLabel && "logged today"} />
         <Tile
           label="Exercise"
@@ -261,19 +252,15 @@ export default async function HomePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm tabular-nums">{Math.round(mealCalories(m))} kcal</span>
-                  {!isDemo && <DeleteMealButton id={m.id} />}
+                  <DeleteMealButton id={m.id} />
                 </div>
               </li>
             ))}
           </ul>
         )}
-        {isDemo ? (
-          <SignInPrompt label="Sign in to log meals" />
-        ) : (
-          <AddDisclosure label="Add meal">
-            <MealForm presets={presets} />
-          </AddDisclosure>
-        )}
+        <AddDisclosure label="Add meal">
+          <MealForm presets={presets} />
+        </AddDisclosure>
       </Section>
 
       <Section title="Exercise" summary={exerciseSummary}>
@@ -293,19 +280,15 @@ export default async function HomePage() {
                   <span className="text-xs text-zinc-500 tabular-nums">
                     {plural(ex.sets.length, "set")}
                   </span>
-                  {!isDemo && <DeleteExerciseButton id={ex.id} />}
+                  <DeleteExerciseButton id={ex.id} />
                 </div>
               </li>
             ))}
           </ul>
         )}
-        {isDemo ? (
-          <SignInPrompt label="Sign in to log exercise" />
-        ) : (
-          <AddDisclosure label="Log exercise">
-            <ExerciseForm presets={exercisePresets} />
-          </AddDisclosure>
-        )}
+        <AddDisclosure label="Log exercise">
+          <ExerciseForm presets={exercisePresets} />
+        </AddDisclosure>
       </Section>
 
       <div className="grid gap-6 md:grid-cols-2 md:items-start">
@@ -319,29 +302,21 @@ export default async function HomePage() {
                   <span className="text-sm">{displayCategory(t.category)}</span>
                   <span className="flex items-center gap-3">
                     <span className="text-sm text-zinc-500 tabular-nums">{fmtDuration(t.minutes)}</span>
-                    {!isDemo && <DeleteTimeEntryButton id={t.id} />}
+                    <DeleteTimeEntryButton id={t.id} />
                   </span>
                 </li>
               ))}
             </ul>
           )}
-          {isDemo ? (
-            <SignInPrompt label="Sign in to track time" />
-          ) : (
-            <AddDisclosure label="Add time">
-              <TimeForm date={today} categories={timeCategories} />
-            </AddDisclosure>
-          )}
+          <AddDisclosure label="Add time">
+            <TimeForm date={today} categories={timeCategories} />
+          </AddDisclosure>
         </Section>
 
         <Section title="Weight" summary={weightLabel && `${weightLabel} today`}>
-          {isDemo ? (
-            <SignInPrompt label="Sign in to log weight" />
-          ) : (
-            <AddDisclosure label="Log weight">
-              <WeightForm />
-            </AddDisclosure>
-          )}
+          <AddDisclosure label="Log weight">
+            <WeightForm />
+          </AddDisclosure>
         </Section>
       </div>
     </div>

@@ -36,7 +36,7 @@ export default function WaterTracker({
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
         setMl(previous);
-        setError("Not signed in");
+        setError("Demo — saving disabled");
         return;
       }
       const { error } = await supabase.from("water").upsert(

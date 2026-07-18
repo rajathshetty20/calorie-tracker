@@ -20,7 +20,7 @@ A self-hosted personal health dashboard: log **meals & macros, water, weight, ex
 - **Time tracking** — minutes per free-form category per day (sleep, work, …), shown as a stacked history chart.
 - **History** — 90-day charts for everything, each with a 7-day average ± standard deviation.
 - **At-a-glance dashboard** — today's status (calories, macros, water, weight, exercise, time) is visible without scrolling; add-forms are collapsed behind `+ Add` disclosures.
-- **Public demo** — `/demo` mirrors Today and History with a deterministic 90-day sample dataset, reached via a "Browse the demo" link on the login page. An amber banner and nav badge mark the mode, and every write affordance becomes a sign-in prompt. Nothing in demo mode touches the database.
+- **Public demo** — `/demo` mirrors Today and History with a deterministic 90-day sample dataset, reached via a "Browse the demo" link on the login page. The full UI is explorable — forms, autocomplete presets, water taps — and only saving is blocked, with an inline notice at the moment of the attempt. An amber banner and nav badge mark the mode; nothing in demo mode can touch the database.
 - Dark mode, responsive layout, and optimistic updates where it matters (water taps).
 
 ## How it's built
