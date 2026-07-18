@@ -50,7 +50,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
-      setMsg({ kind: "err", text: "Not signed in" });
+      setMsg({ kind: "err", text: "Saving is disabled in the demo — sign in to track your own." });
       return;
     }
     const { error } = await supabase.from("settings").upsert({

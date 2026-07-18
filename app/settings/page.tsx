@@ -1,15 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
+import { demoData } from "@/lib/demo-data";
 import type { Settings } from "@/lib/types";
+import DemoBanner from "../DemoBanner";
 import SettingsForm from "./SettingsForm";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const { data } = await supabase.from("settings").select("*").single();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const settings: Settings | null = data;
+  let settings: Settings | null;
+  if (user) {
+    const { data } = await supabase.from("settings").select("*").single();
+    settings = data;
+  } else {
+    settings = demoData().settings;
+  }
 
   return (
     <div className="space-y-6">
+      {!user && <DemoBanner />}
+
       <header>
         <h1 className="text-2xl font-semibold">Settings</h1>
         <p className="text-sm text-zinc-500">Daily target, macro split, and water bottle size.</p>

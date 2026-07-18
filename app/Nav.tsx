@@ -9,12 +9,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-// Inside /demo the same tabs point at the demo mirrors; Settings stays
-// gated and lands on the login page.
+// Inside /demo the same tabs point at the demo mirrors.
 const links: { base: string; demo: string; label: string; icon: LucideIcon }[] = [
   { base: "/", demo: "/demo", label: "Today", icon: LayoutDashboard },
   { base: "/history", demo: "/demo/history", label: "History", icon: History },
-  { base: "/settings", demo: "/settings", label: "Settings", icon: Settings },
+  { base: "/settings", demo: "/demo/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Nav() {
