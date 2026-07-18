@@ -32,7 +32,7 @@ export default function LoginPage() {
         className="w-full max-w-sm space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
       >
         <div>
-          <h1 className="text-xl font-semibold">Calorie tracker</h1>
+          <h1 className="text-xl font-semibold">Daily tracker</h1>
           <p className="text-sm text-zinc-500">Sign in with a magic link.</p>
         </div>
         <input

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   History,
+  LayoutDashboard,
   Settings,
-  Utensils,
   type LucideIcon,
 } from "lucide-react";
 
 const links: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/", label: "Today", icon: Utensils },
+  { href: "/", label: "Today", icon: LayoutDashboard },
   { href: "/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

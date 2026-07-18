@@ -1,6 +1,6 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { displayCategory, fmtDuration, mealCalories, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
+import { displayCategory, fmtDuration, mealCalories, plural, todayISO, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
 import CaloriesCard from "./CaloriesCard";
 import MealForm from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
@@ -10,13 +10,8 @@ import TimeForm from "./time/TimeForm";
 import DeleteTimeEntryButton from "./time/DeleteTimeEntryButton";
 import WaterTracker from "./WaterTracker";
 import WeightForm from "./WeightForm";
-
-function todayISO() {
-  // Local YYYY-MM-DD
-  const d = new Date();
-  const tz = d.getTimezoneOffset() * 60_000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
+import AddDisclosure from "./AddDisclosure";
+import Tile from "./Tile";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -123,6 +118,17 @@ export default async function HomePage() {
       }
     : { carbs_g: 200, protein_g: 150, fat_g: 67 };
 
+  // Each domain's summary is computed once and shared between its glance
+  // tile and its section header so the two can never disagree.
+  const totalSets = exerciseList.reduce((a, ex) => a + ex.sets.length, 0);
+  const setsLabel = plural(totalSets, "set");
+  const exerciseSummary =
+    exerciseList.length > 0 ? `${plural(exerciseList.length, "exercise")} · ${setsLabel}` : null;
+  const timeTotal = timeList.reduce((a, t) => a + t.minutes, 0);
+  const timeLabel = timeList.length > 0 ? fmtDuration(timeTotal) : null;
+  const weightLabel = todaysWeight !== null ? `${Number(todaysWeight)} kg` : null;
+  const mealsSummary = list.length > 0 ? `${Math.round(totals.calories)} kcal` : null;
+
   return (
     <div className="space-y-6">
       <header>
@@ -140,21 +146,38 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="mb-3 text-sm font-medium text-zinc-500">Add meal</h2>
-        <MealForm presets={presets} />
+      {/* At a glance: water is tap-to-log, the rest summarize the sections below. */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Tile label="Water">
+          {/* Remount when the server value changes so a stale tab (other
+              device, day rollover) can't upsert from an outdated total. */}
+          <WaterTracker
+            key={`${today}:${todaysMl}`}
+            date={today}
+            initialMl={todaysMl}
+            bottleMl={bottleMl}
+          />
+        </Tile>
+        <Tile label="Weight" value={weightLabel} sub={weightLabel && "logged today"} />
+        <Tile
+          label="Exercise"
+          value={exerciseList.length > 0 ? String(exerciseList.length) : null}
+          sub={exerciseList.length > 0 ? setsLabel : null}
+        />
+        <Tile
+          label="Time"
+          value={timeLabel}
+          sub={timeLabel && plural(timeList.length, "category", "categories")}
+        />
       </section>
 
-      <section>
-        <h2 className="mb-2 text-sm font-medium text-zinc-500">Meals today</h2>
+      <Section title="Meals" summary={mealsSummary}>
         {list.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700">
-            Nothing logged yet.
-          </p>
+          <EmptyNote />
         ) : (
-          <ul className="divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {list.map((m) => (
-              <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <li key={m.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div>
                   <div className="text-sm font-medium">
                     {m.name || "Meal"}
@@ -171,18 +194,18 @@ export default async function HomePage() {
             ))}
           </ul>
         )}
-      </section>
+        <AddDisclosure label="Add meal">
+          <MealForm presets={presets} />
+        </AddDisclosure>
+      </Section>
 
-      <section>
-        <h2 className="mb-2 text-sm font-medium text-zinc-500">Exercises today</h2>
+      <Section title="Exercise" summary={exerciseSummary}>
         {exerciseList.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700">
-            No exercises logged yet.
-          </p>
+          <EmptyNote />
         ) : (
-          <ul className="divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {exerciseList.map((ex) => (
-              <li key={ex.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <li key={ex.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
                   <div className="text-sm font-medium">{ex.name}</div>
                   <div className="truncate text-xs text-zinc-500 tabular-nums">
@@ -191,7 +214,7 @@ export default async function HomePage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-xs text-zinc-500 tabular-nums">
-                    {ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}
+                    {plural(ex.sets.length, "set")}
                   </span>
                   <DeleteExerciseButton id={ex.id} />
                 </div>
@@ -199,56 +222,66 @@ export default async function HomePage() {
             ))}
           </ul>
         )}
-      </section>
+        <AddDisclosure label="Log exercise">
+          <ExerciseForm presets={exercisePresets} />
+        </AddDisclosure>
+      </Section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="mb-3 text-sm font-medium text-zinc-500">Log exercise</h2>
-        <ExerciseForm presets={exercisePresets} />
-      </section>
-
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-medium text-zinc-500">Time</h2>
-          {timeList.length > 0 && (
-            <span className="text-xs text-zinc-500 tabular-nums">
-              {fmtDuration(timeList.reduce((a, t) => a + t.minutes, 0))} tracked
-            </span>
+      <div className="grid gap-6 md:grid-cols-2 md:items-start">
+        <Section title="Time" summary={timeLabel && `${timeLabel} tracked`}>
+          {timeList.length === 0 ? (
+            <EmptyNote />
+          ) : (
+            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {timeList.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="text-sm">{displayCategory(t.category)}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-sm text-zinc-500 tabular-nums">{fmtDuration(t.minutes)}</span>
+                    <DeleteTimeEntryButton id={t.id} />
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
-        </div>
-        {timeList.length > 0 && (
-          <ul className="mb-3 divide-y divide-zinc-100 dark:divide-zinc-800">
-            {timeList.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 py-2">
-                <span className="text-sm">{displayCategory(t.category)}</span>
-                <span className="flex items-center gap-3">
-                  <span className="text-sm text-zinc-500 tabular-nums">{fmtDuration(t.minutes)}</span>
-                  <DeleteTimeEntryButton id={t.id} />
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <TimeForm date={today} categories={timeCategories} />
-      </section>
+          <AddDisclosure label="Add time">
+            <TimeForm date={today} categories={timeCategories} />
+          </AddDisclosure>
+        </Section>
 
-      <section className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-sm font-medium text-zinc-500">Water</h2>
-        <WaterTracker date={today} initialMl={todaysMl} bottleMl={bottleMl} />
-      </section>
-
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-medium text-zinc-500">Weight</h2>
-          {todaysWeight !== null && (
-            <span className="text-xs text-zinc-500 tabular-nums">
-              Logged today: {Number(todaysWeight)} kg
-            </span>
-          )}
-        </div>
-        <WeightForm />
-      </section>
+        <Section title="Weight" summary={weightLabel && `${weightLabel} today`}>
+          <AddDisclosure label="Log weight">
+            <WeightForm />
+          </AddDisclosure>
+        </Section>
+      </div>
     </div>
   );
+}
+
+// Shared card shape: title left, today's total right, content below.
+function Section({
+  title,
+  summary,
+  children,
+}: {
+  title: string;
+  summary?: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-sm font-medium text-zinc-500">{title}</h2>
+        {summary && <span className="text-xs text-zinc-500 tabular-nums">{summary}</span>}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function EmptyNote() {
+  return <p className="text-sm text-zinc-500">Nothing logged yet.</p>;
 }
 
 function MacroBar({

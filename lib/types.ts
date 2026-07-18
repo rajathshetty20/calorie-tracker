@@ -93,6 +93,18 @@ export function fmtDuration(minutes: number) {
   return `${m}m`;
 }
 
+// "3 sets", "1 bottle" — irregular plurals pass the plural form explicitly.
+export function plural(n: number, word: string, pluralWord = `${word}s`) {
+  return `${n} ${n === 1 ? word : pluralWord}`;
+}
+
+// Local YYYY-MM-DD for "today".
+export function todayISO() {
+  const d = new Date();
+  const tz = d.getTimezoneOffset() * 60_000;
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
+
 // Categories are stored lowercase; show them with a leading capital.
 export function displayCategory(category: string) {
   return category.charAt(0).toUpperCase() + category.slice(1);

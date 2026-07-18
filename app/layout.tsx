@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Calorie tracker",
-  description: "Track meals, macros, and weight.",
+  title: "Daily tracker",
+  description: "Meals, water, weight, exercise, and time — one daily dashboard.",
 };
 
 // Matches the nav surface so mobile browser chrome blends with the app.

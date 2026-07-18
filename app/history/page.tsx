@@ -140,7 +140,7 @@ export default async function HistoryPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">History</h1>
-        <p className="text-sm text-zinc-500">Calories, water, and weight.</p>
+        <p className="text-sm text-zinc-500">Calories, water, weight, exercise, and time.</p>
       </header>
 
       <HistoryChart
