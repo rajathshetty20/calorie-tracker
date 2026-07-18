@@ -1,17 +1,13 @@
-// Inline app mark — keep in sync with app/icon.svg and app/apple-icon.tsx.
+// Quadrant mark: four tracked domains (food, water, exercise, time) as
+// dashboard tiles. Keep in sync with app/icon.svg and app/apple-icon.tsx.
 export default function Logo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 128 128" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="logo-g" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#34d399" />
-          <stop offset="1" stopColor="#059669" />
-        </linearGradient>
-      </defs>
-      <rect width="128" height="128" rx="28" fill="url(#logo-g)" />
-      <rect x="34" y="68" width="14" height="28" rx="7" fill="#fff" />
-      <rect x="57" y="50" width="14" height="46" rx="7" fill="#fff" />
-      <rect x="80" y="32" width="14" height="64" rx="7" fill="#fff" />
+      <rect width="128" height="128" rx="28" fill="#18181b" />
+      <rect x="28" y="28" width="32" height="32" rx="10" fill="#34d399" />
+      <rect x="68" y="28" width="32" height="32" rx="10" fill="#38bdf8" />
+      <rect x="28" y="68" width="32" height="32" rx="10" fill="#fbbf24" />
+      <rect x="68" y="68" width="32" height="32" rx="10" fill="#fb7185" />
     </svg>
   );
 }
