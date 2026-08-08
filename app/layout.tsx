@@ -32,6 +32,9 @@ export const viewport: Viewport = {
   // Standalone mode extends under the notch and home indicator; the safe-area
   // padding below keeps content clear of both.
   viewportFit: "cover",
+  // Locked: accidental pinch/zoom left the app at arbitrary scale on iOS.
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default async function RootLayout({

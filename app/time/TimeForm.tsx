@@ -97,7 +97,7 @@ export default function TimeForm({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 rounded-lg border border-rule p-2 sm:grid-cols-2">
         <label className="block">
           <span className="text-[0.75rem] text-ink-3">From</span>
           <input type="datetime-local"

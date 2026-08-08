@@ -195,9 +195,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
           ))}
         </select>
         <span className="mt-1 block text-[0.75rem] text-ink-3">
-          Where your day starts and ends. Set it to where you live: it decides
-          which day an entry counts towards, and how one that crosses midnight
-          is divided between two days.
+          Sets when your day starts and ends.
           {detected && !sameZone(detected, timezone) && (
             <>
               {" "}

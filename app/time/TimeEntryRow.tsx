@@ -80,7 +80,7 @@ export default function TimeEntryRow({
   const originalEnd = new Date(entry.ended_at ?? entry.started_at);
 
   return (
-    <li className="py-2">
+    <div className="py-2">
       <div className="flex items-center justify-between gap-3">
         <button type="button"
           onClick={() => {
@@ -98,7 +98,7 @@ export default function TimeEntryRow({
           aria-expanded={isDemo ? undefined : editing}
           title={isDemo ? "Sign in to adjust entries" : "Adjust start and end"}
  className="min-w-0 flex-1 text-left" >
-          <div className="text-[0.8125rem]">{displayCategory(entry.category)}</div>
+          <div className="text-[0.9375rem] leading-snug">{displayCategory(entry.category)}</div>
           <div className="text-[0.75rem] text-ink-3 tabular-nums">
             {localTimeHHMM(originalStart, timeZone)} → {localTimeHHMM(originalEnd, timeZone)}
             {crossesMidnight && (
@@ -159,7 +159,7 @@ export default function TimeEntryRow({
           </div>
         </div>
       )}
-    </li>
+    </div>
   );
 }
 
