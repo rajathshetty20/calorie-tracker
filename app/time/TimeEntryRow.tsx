@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
 import { displayCategory, fmtDuration } from "@/lib/types";
 import { localTimeHHMM, spanMinutes, splitByDay } from "@/lib/time";
 import { useWrite } from "../useWrite";
@@ -15,7 +14,6 @@ export type EditableEntry = {
   ended_at: string | null;
 };
 
-const NUDGES = [-15, -5, 5, 15] as const;
 
 /**
  * A finished time entry, using the same row shell as meals and exercises so
@@ -94,14 +92,8 @@ function Editor({
 
   return (
     <div className="space-y-3">
-      <div className="space-y-1">
-        <DateTimeField label="Start" iso={startIso} timeZone={timeZone} onChange={setStartIso} />
-        <Nudges label="Start" iso={startIso} onChange={setStartIso} />
-      </div>
-      <div className="space-y-1">
-        <DateTimeField label="End" iso={endIso} timeZone={timeZone} onChange={setEndIso} />
-        <Nudges label="End" iso={endIso} onChange={setEndIso} />
-      </div>
+      <DateTimeField label="Start" iso={startIso} timeZone={timeZone} onChange={setStartIso} />
+      <DateTimeField label="End" iso={endIso} timeZone={timeZone} onChange={setEndIso} />
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-rule pt-2 text-[0.75rem]">
         <span className="font-medium tabular-nums">
@@ -145,30 +137,3 @@ function Editor({
   );
 }
 
-function Nudges({
-  label,
-  iso,
-  onChange,
-}: {
-  label: string;
-  iso: string;
-  onChange: (iso: string) => void;
-}) {
-  const instant = new Date(iso);
-  return (
-    <span className="inline-flex overflow-hidden rounded-lg border border-rule">
-      {NUDGES.map((n) => (
-        <button
-          key={n}
-          type="button"
-          onClick={() => onChange(new Date(instant.getTime() + n * 60_000).toISOString())}
-          aria-label={`${label} ${n > 0 ? "later" : "earlier"} by ${Math.abs(n)} minutes`}
-          className="flex min-h-[34px] items-center gap-0.5 px-2.5 py-1 text-[0.75rem] tabular-nums text-ink-2 hover:bg-surface-2"
-        >
-          {n > 0 ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-          {Math.abs(n)}
-        </button>
-      ))}
-    </span>
-  );
-}
