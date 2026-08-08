@@ -49,14 +49,7 @@ export default function ChartSwitcher({
               t.key === current.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
             }`}
           >
-            <span className="flex items-center gap-1.5">
-              <span
-                aria-hidden="true"
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: t.key === current.key ? t.color : "transparent" }}
-              />
-              {t.label}
-            </span>
+            {t.label}
           </button>
         ))}
       </div>

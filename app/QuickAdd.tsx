@@ -9,7 +9,7 @@ import TimerControls from "./time/TimerControls";
 import WeightForm from "./WeightForm";
 import WaterTracker from "./WaterTracker";
 import { loadQuickAddData, type QuickAddData } from "./quickAddData";
-import { DOMAIN_COLOR, type Domain } from "./ui";
+import { type Domain } from "./ui";
 
 const TABS: { key: Domain; label: string }[] = [
   { key: "food", label: "Meal" },
@@ -93,14 +93,7 @@ export default function QuickAdd({
  className={`min-h-[40px] rounded-lg px-1 py-2 text-[0.75rem] font-semibold transition-colors ${
                   tab === t.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
                 }`} >
-                <span className="flex items-center gap-1.5">
-                  <span aria-hidden="true"
- className="inline-block h-1.5 w-1.5 rounded-full"
-                    style={{
-                      backgroundColor: tab === t.key ? DOMAIN_COLOR[t.key] : "transparent",
-                    }} />
-                  {t.label}
-                </span>
+                {t.label}
               </button>
             ))}
           </div>

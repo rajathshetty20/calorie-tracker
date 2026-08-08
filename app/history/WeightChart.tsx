@@ -61,7 +61,7 @@ export default function WeightChart({
     return windowed.map((d, i) => ({ ...d, smooth: Math.round(means[i] * 10) / 10 }));
   }, [windowed, smoothWindow]);
 
-  const values = data.flatMap((d) => (smoothing ? [d.kg, d.smooth] : [d.kg]));
+  const values = data.map((d) => (smoothing ? d.smooth : d.kg));
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;
   const pad = Math.max(0.3, (max - min) * 0.25);
@@ -117,15 +117,6 @@ export default function WeightChart({
                 activeDot={{ r: 5, fill: "var(--weight)", stroke: "var(--chart-surface)", strokeWidth: 2 }}
                 isAnimationActive={false}
               />
-              {smoothing && (
-                <Line type="monotone"
-                  dataKey="kg" stroke="var(--weight)"
-                  strokeOpacity={0.3}
-                  strokeWidth={1}
-                  dot={false}
-                  activeDot={false}
-                  isAnimationActive={false} />
-              )}
             </ComposedChart>
           </ResponsiveContainer>
         </div>

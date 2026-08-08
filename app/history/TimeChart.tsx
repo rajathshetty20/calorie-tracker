@@ -200,10 +200,7 @@ function TimeTooltip({
   return (
     <div className="rounded-lg border border-rule bg-surface px-3 py-2 text-[0.75rem] shadow-sm ">
       <div className="font-medium">{fmtSpan(row.startDate, row.endDate)}</div>
-      {row.size > 1 && (
-        <div className="mb-1 text-ink-3">Average per tracked day · {row.size} days</div>
-      )}
-      <div className="tabular-nums">Total: {fmtDuration(total)}</div>
+            <div className="tabular-nums">Total: {fmtDuration(total)}</div>
       <div className="mt-1 space-y-0.5">
         {present.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5 tabular-nums text-ink-3">

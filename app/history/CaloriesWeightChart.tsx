@@ -5,7 +5,6 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -64,20 +63,12 @@ export default function CaloriesWeightChart({
     }));
   }, [calories, weights, range]);
 
-  const first = (key: "kcal" | "kg") => data.find((d) => d[key] !== null)?.[key] ?? null;
-  const baseKcal = first("kcal");
-  const baseKg = first("kg");
-  const hasBoth = baseKcal !== null && baseKg !== null;
-
-  // Index both to 100 at the first point that has data. One axis, one unit
-  // ("% of starting value"), and no scale-crossing to imply a correlation.
-  const indexed = data.map((d) => ({
-    date: d.date,
-    kcal: d.kcal !== null && baseKcal ? (d.kcal / baseKcal) * 100 : null,
-    kg: d.kg !== null && baseKg ? (d.kg / baseKg) * 100 : null,
-    rawKcal: d.kcal,
-    rawKg: d.kg,
-  }));
+  const kcals = data.map((d) => d.kcal).filter((v): v is number => v !== null);
+  const kgs = data.map((d) => d.kg).filter((v): v is number => v !== null);
+  const hasBoth = kcals.length > 0 && kgs.length > 0;
+  const kgMin = kgs.length ? Math.min(...kgs) : 0;
+  const kgMax = kgs.length ? Math.max(...kgs) : 0;
+  const pad = Math.max(0.3, (kgMax - kgMin) * 0.3);
 
   return (
     <section className="border-t border-rule pt-3">
@@ -86,7 +77,7 @@ export default function CaloriesWeightChart({
           Calories vs weight
         </h2>
         <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-medium text-ink-2">
-          7-day average, indexed to 100
+          7-day average
         </span>
       </div>
 
@@ -100,7 +91,7 @@ export default function CaloriesWeightChart({
         <>
           <div className={CHART_BODY}>
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <LineChart data={indexed} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <LineChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -108,15 +99,30 @@ export default function CaloriesWeightChart({
                   {...AXIS_PROPS}
                   {...xTickProps(range)}
                 />
+                {/* Two scales, so each axis is tinted to its series — with a
+                    shared axis there is nothing to tell you which is which,
+                    and where the two lines cross means nothing. */}
                 <YAxis
+                  yAxisId="kcal"
                   {...AXIS_PROPS}
-                  width={44}
-                  domain={["auto", "auto"]}
-                  tickFormatter={(v: number) => `${Math.round(v)}%`}
+                  tick={{ ...AXIS_PROPS.tick, fill: "var(--food)" }}
+                  width={46}
+                  domain={[0, "auto"]}
                 />
-                <ReferenceLine y={100} stroke="var(--ink-3)" strokeDasharray="4 4" />
-                <Tooltip content={<IndexTooltip />} />
+                <YAxis
+                  yAxisId="kg"
+                  orientation="right"
+                  {...AXIS_PROPS}
+                  tick={{ ...AXIS_PROPS.tick, fill: "var(--weight)" }}
+                  width={40}
+                  domain={[
+                    Math.floor((kgMin - pad) * 10) / 10,
+                    Math.ceil((kgMax + pad) * 10) / 10,
+                  ]}
+                />
+                <Tooltip content={<BothTooltip />} />
                 <Line
+                  yAxisId="kcal"
                   type="monotone"
                   dataKey="kcal"
                   name="Calories"
@@ -127,6 +133,7 @@ export default function CaloriesWeightChart({
                   isAnimationActive={false}
                 />
                 <Line
+                  yAxisId="kg"
                   type="monotone"
                   dataKey="kg"
                   name="Weight"
@@ -140,9 +147,8 @@ export default function CaloriesWeightChart({
             </ResponsiveContainer>
           </div>
           <div className="mt-3 flex flex-wrap gap-3 text-[0.75rem] text-ink-3">
-            <Key color="var(--food)" label="Calories" />
-            <Key color="var(--weight)" label="Weight" />
-            <span>100% = value at the start of the range</span>
+            <Key color="var(--food)" label="Calories / day — left axis" />
+            <Key color="var(--weight)" label="Weight — right axis" />
           </div>
         </>
       )}
@@ -159,14 +165,14 @@ function Key({ color, label }: { color: string; label: string }) {
   );
 }
 
-type IndexRow = { date: string; kcal: number | null; kg: number | null; rawKcal: number | null; rawKg: number | null };
-function IndexTooltip({
+type Row = { date: string; kcal: number | null; kg: number | null };
+function BothTooltip({
   active,
   payload,
   label,
 }: {
   active?: boolean;
-  payload?: { payload?: IndexRow }[];
+  payload?: { payload?: Row }[];
   label?: string;
 }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -174,13 +180,11 @@ function IndexTooltip({
   if (!row) return null;
   return (
     <TooltipCard title={fmtFullDate(label)} subtitle="7-day average">
-      <div className="tnum">
-        {row.rawKcal === null ? "—" : `${row.rawKcal.toLocaleString()} kcal/day`}
-        {row.kcal !== null && <span className="text-ink-3"> · {Math.round(row.kcal)}%</span>}
+      <div className="tnum" style={{ color: "var(--food)" }}>
+        {row.kcal === null ? "—" : `${row.kcal.toLocaleString()} kcal/day`}
       </div>
-      <div className="tnum">
-        {row.rawKg === null ? "—" : `${row.rawKg} kg`}
-        {row.kg !== null && <span className="text-ink-3"> · {Math.round(row.kg)}%</span>}
+      <div className="tnum" style={{ color: "var(--weight)" }}>
+        {row.kg === null ? "—" : `${row.kg} kg`}
       </div>
     </TooltipCard>
   );

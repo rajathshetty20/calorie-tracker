@@ -35,9 +35,12 @@ export default async function RunningTimer() {
   }
 
   if (!timer) return null;
+  // Today is where you manage time; elsewhere the bar exists so a running
+  // timer is never invisible and is always one tap from stopping.
+  const compact = !(path === "/" || path === "/demo");
   return (
     <div className="mx-auto w-full max-w-3xl px-4">
-      <TimerBar timer={timer} />
+      <TimerBar timer={timer} compact={compact} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { displayCategory, fmtDuration } from "@/lib/types";
 import {
   instantFromLocal,
@@ -11,6 +11,7 @@ import {
   splitByDay,
 } from "@/lib/time";
 import { useWrite } from "../useWrite";
+import DeleteButton from "../DeleteButton";
 import { useIsDemo } from "../DemoContext";
 
 export type EditableEntry = {
@@ -74,9 +75,6 @@ export default function TimeEntryRow({
     if (ok) setEditing(false);
   }
 
-  async function remove() {
-    await run(({ supabase }) => supabase.from("time_entries").delete().eq("id", entry.id));
-  }
 
   const originalStart = new Date(entry.started_at);
   const originalEnd = new Date(entry.ended_at ?? entry.started_at);
@@ -118,6 +116,7 @@ export default function TimeEntryRow({
             <span className="block text-[0.6875rem]">{fmtDuration(shareToday)} today</span>
           )}
         </span>
+        <DeleteButton table="time_entries" id={entry.id} label="time entry" />
       </div>
 
       {editing && (
@@ -156,12 +155,6 @@ export default function TimeEntryRow({
               }}
  className="rounded-lg px-3 py-1.5 text-[0.8125rem] text-ink-2 hover:bg-surface-2" >
               Cancel
-            </button>
-            <button type="button"
-              onClick={remove}
-              disabled={busy} aria-label="Delete entry"
- className="ml-auto rounded-lg p-1.5 text-ink-3 hover:bg-red-50 hover:text-over disabled:opacity-50 dark:hover:bg-red-950/30" >
-              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </div>

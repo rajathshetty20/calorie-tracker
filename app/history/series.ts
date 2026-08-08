@@ -191,7 +191,7 @@ export function aggregationLabel(
   smoothWindow: number,
   unit = "entry",
 ): string | null {
-  if (bucketSize > 1) return `${bucketSize}-day groups`;
+  if (bucketSize > 1) return `${bucketSize}-day average`;
   if (smoothWindow > 1) return `${smoothWindow}-${unit} trend`;
   return null;
 }

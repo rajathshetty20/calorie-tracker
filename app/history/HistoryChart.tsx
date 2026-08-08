@@ -125,27 +125,14 @@ export default function HistoryChart({ rows, target }: { rows: DayRow[]; target:
         colors={{ Carbs: "#f59e0b", Protein: "#0ea5e9", Fat: "#f43f5e" }}
       />
 
-      <div className="mt-3 flex flex-wrap gap-3 text-[0.75rem] text-ink-3">
-        <Legend color="bg-amber-500" label="Carbs" />
-        <Legend color="bg-sky-500" label="Protein" />
-        <Legend color="bg-rose-500" label="Fat" />
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block w-4 border-t-2 border-dashed border-rule" />
-          Target {target}
-        </span>
-      </div>
+      <p className="mt-2 text-[0.75rem] text-ink-3">
+        <span className="inline-block w-4 border-t-2 border-dashed border-ink-3 align-middle" />{" "}
+        Target {target} kcal
+      </p>
     </section>
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`inline-block h-2 w-2 rounded-sm ${color}`} />
-      {label}
-    </span>
-  );
-}
 
 type TooltipPayloadItem = { payload?: Plot };
 function MacroTooltip({
@@ -158,11 +145,9 @@ function MacroTooltip({
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0].payload;
   if (!row) return null;
-  const bucketed = row.size > 1;
   return (
     <TooltipCard
-      title={fmtSpan(row.startDate, row.endDate)}
-      subtitle={bucketed ? `Average per logged day · ${row.size} days` : null} >
+      title={fmtSpan(row.startDate, row.endDate)} >
       <div className="tabular-nums">Total: {Math.round(row.total_kcal)} kcal</div>
       <div className="mt-1 grid grid-cols-2 gap-x-3 tabular-nums text-ink-3">
         <span>Carbs</span><span>{Math.round(row.carbs_g)}g · {Math.round(row.carbs_kcal)} kcal</span>
