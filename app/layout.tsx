@@ -10,6 +10,13 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "Daily tracker",
   description: "Meals, water, weight, exercise, and time — one daily dashboard.",
+  // Installed to the home screen, the app runs without browser chrome and
+  // draws its own status bar backdrop.
+  appleWebApp: {
+    capable: true,
+    title: "Tracker",
+    statusBarStyle: "default",
+  },
 };
 
 // Matches the nav surface so mobile browser chrome blends with the app.
@@ -18,6 +25,9 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#18181b" },
   ],
+  // Standalone mode extends under the notch and home indicator; the safe-area
+  // padding below keeps content clear of both.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -35,7 +45,9 @@ export default async function RootLayout({
     >
       <body className="min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <TopBar signedIn={!!user} />
-        <main className="mx-auto w-full max-w-3xl px-4 py-6">{children}</main>
+        <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6">
+          {children}
+        </main>
       </body>
     </html>
   );
