@@ -1,7 +1,7 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { demoData } from "@/lib/demo-data";
-import { displayCategory, fmtDuration, mealCalories, plural, todayISO, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight, KCAL_PER_G } from "@/lib/types";
+import { displayCategory, fmtDuration, mealCalories, plural, todayISO, weeklyDelta, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type WeightPoint, KCAL_PER_G } from "@/lib/types";
 import CaloriesCard from "./CaloriesCard";
 import MealForm, { type MealPreset } from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
@@ -24,7 +24,7 @@ type TodayData = {
   settings: Settings | null;
   recentMeals: RecentMeal[];
   waterMl: number;
-  weightKg: number | null;
+  weights: WeightPoint[]; // recent, newest first
   exercises: Exercise[];
   recentExercises: RecentExercise[];
   timeEntries: TimeEntry[];
@@ -50,7 +50,10 @@ async function loadToday(today: string): Promise<TodayData> {
       settings: demo.settings,
       recentMeals: [...demo.meals].sort(desc),
       waterMl: demo.water.find((w) => w.drank_on === today)?.ml ?? 0,
-      weightKg: demo.weights.find((w) => w.measured_on === today)?.weight_kg ?? null,
+      weights: [...demo.weights]
+        .sort((a, b) => b.measured_on.localeCompare(a.measured_on))
+        .slice(0, 30)
+        .map((w) => ({ date: w.measured_on, kg: Number(w.weight_kg) })),
       exercises: demo.exercises.filter((e) => e.performed_on === today).sort(desc),
       recentExercises: [...demo.exercises].sort(desc),
       timeEntries: demo.timeEntries.filter((t) => t.spent_on === today),
@@ -63,7 +66,7 @@ async function loadToday(today: string): Promise<TodayData> {
     { data: settings },
     { data: recent },
     { data: waterRow },
-    { data: weightRow },
+    { data: weightRows },
     { data: exercises },
     { data: recentExercises },
     { data: timeEntries },
@@ -82,7 +85,11 @@ async function loadToday(today: string): Promise<TodayData> {
         .order("created_at", { ascending: false })
         .limit(200),
       supabase.from("water").select("ml").eq("drank_on", today).maybeSingle(),
-      supabase.from("weights").select("weight_kg").eq("measured_on", today).maybeSingle(),
+      supabase
+        .from("weights")
+        .select("measured_on,weight_kg")
+        .order("measured_on", { ascending: false })
+        .limit(30),
       supabase
         .from("exercises")
         .select("*")
@@ -111,7 +118,10 @@ async function loadToday(today: string): Promise<TodayData> {
     settings: settings as Settings | null,
     recentMeals: (recent ?? []) as RecentMeal[],
     waterMl: (waterRow as Pick<Water, "ml"> | null)?.ml ?? 0,
-    weightKg: (weightRow as Pick<Weight, "weight_kg"> | null)?.weight_kg ?? null,
+    weights: ((weightRows ?? []) as { measured_on: string; weight_kg: number }[]).map((w) => ({
+      date: w.measured_on,
+      kg: Number(w.weight_kg),
+    })),
     exercises: (exercises ?? []) as Exercise[],
     recentExercises: (recentExercises ?? []) as RecentExercise[],
     timeEntries: (timeEntries ?? []) as TimeEntry[],
@@ -129,7 +139,7 @@ export default async function HomePage() {
     settings: s,
     recentMeals,
     waterMl: todaysMl,
-    weightKg: todaysWeight,
+    weights,
     exercises: exerciseList,
     recentExercises,
     timeEntries: timeList,
@@ -137,6 +147,10 @@ export default async function HomePage() {
   } = await loadToday(today);
 
   const bottleMl = s?.bottle_ml ?? 1000;
+
+  const todaysWeight = weights.find((w) => w.date === today)?.kg ?? null;
+  const lastWeight = weights[0]?.kg ?? null;
+  const trend = weeklyDelta(weights);
 
   const seen = new Set<string>();
   const presets: MealPreset[] = [];
@@ -188,7 +202,16 @@ export default async function HomePage() {
     exerciseList.length > 0 ? `${plural(exerciseList.length, "exercise")} · ${setsLabel}` : null;
   const timeTotal = timeList.reduce((a, t) => a + t.minutes, 0);
   const timeLabel = timeList.length > 0 ? fmtDuration(timeTotal) : null;
-  const weightLabel = todaysWeight !== null ? `${Number(todaysWeight)} kg` : null;
+  const shownWeight = todaysWeight ?? lastWeight;
+  const weightLabel = shownWeight !== null ? `${shownWeight} kg` : null;
+  const weightSub =
+    trend !== null
+      ? `${trend > 0 ? "+" : trend < 0 ? "−" : "±"}${Math.abs(trend).toFixed(1)} kg this week`
+      : todaysWeight !== null
+        ? "logged today"
+        : lastWeight !== null
+          ? "not logged today"
+          : null;
   const mealsSummary = list.length > 0 ? `${Math.round(totals.calories)} kcal` : null;
 
   return (
@@ -213,16 +236,16 @@ export default async function HomePage() {
       {/* At a glance: water is tap-to-log, the rest summarize the sections below. */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile label="Water">
-          {/* Remount when the server value changes so a stale tab (other
-              device, day rollover) can't upsert from an outdated total. */}
+          {/* Keyed by day only: the tracker reconciles server values itself,
+              and remounting on every total made in-flight taps look lost. */}
           <WaterTracker
-            key={`${today}:${todaysMl}`}
+            key={today}
             date={today}
             initialMl={todaysMl}
             bottleMl={bottleMl}
           />
         </Tile>
-        <Tile label="Weight" value={weightLabel} sub={weightLabel && "logged today"} />
+        <Tile label="Weight" value={weightLabel} sub={weightSub} />
         <Tile
           label="Exercise"
           value={exerciseList.length > 0 ? String(exerciseList.length) : null}
@@ -313,10 +336,12 @@ export default async function HomePage() {
           </AddDisclosure>
         </Section>
 
-        <Section title="Weight" summary={weightLabel && `${weightLabel} today`}>
-          <AddDisclosure label="Log weight">
-            <WeightForm />
-          </AddDisclosure>
+        <Section title="Weight" summary={todaysWeight !== null ? "logged today" : null}>
+          <WeightForm
+            today={today}
+            todaysWeight={todaysWeight}
+            lastWeight={lastWeight}
+          />
         </Section>
       </div>
     </div>

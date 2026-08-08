@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useMemo, useRef, useState } from "react";
 import { displayCategory } from "@/lib/types";
+import { useWrite } from "../useWrite";
 
 export default function TimeForm({
   date,
@@ -12,12 +11,10 @@ export default function TimeForm({
   date: string; // YYYY-MM-DD, from the server
   categories?: string[]; // recent categories, lowercase
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run, busy, error, setError } = useWrite();
   const [category, setCategory] = useState("");
   const [hours, setHours] = useState("");
   const [mins, setMins] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,25 +37,17 @@ export default function TimeForm({
       setError("Add a duration.");
       return;
     }
-    const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setError("Saving is disabled in the demo — sign in to track your own.");
-      return;
-    }
     // One row per day+category: saving the same category again replaces it.
-    const { error } = await supabase.from("time_entries").upsert(
-      { user_id: userData.user.id, spent_on: date, category: cat, minutes },
-      { onConflict: "user_id,spent_on,category" },
+    const saved = await run(({ supabase, userId }) =>
+      supabase.from("time_entries").upsert(
+        { user_id: userId, spent_on: date, category: cat, minutes },
+        { onConflict: "user_id,spent_on,category" },
+      ),
     );
-    if (error) {
-      setError(error.message);
-      return;
-    }
+    if (!saved) return;
     setCategory("");
     setHours("");
     setMins("");
-    startTransition(() => router.refresh());
   }
 
   const showSuggestions = focused && matches.length > 0;
@@ -126,10 +115,10 @@ export default function TimeForm({
       />
       <button
         type="submit"
-        disabled={pending}
+        disabled={busy}
         className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "..." : "Add"}
+        {busy ? "..." : "Add"}
       </button>
       {error && <p className="w-full text-sm text-red-600">{error}</p>}
     </form>

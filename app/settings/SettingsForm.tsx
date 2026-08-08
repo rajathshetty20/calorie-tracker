@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
 import { KCAL_PER_G } from "@/lib/types";
+import { useWrite } from "../useWrite";
 
 type Initial = {
   target_calories: number;
@@ -14,8 +13,7 @@ type Initial = {
 };
 
 export default function SettingsForm({ initial }: { initial: Initial }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run, busy, error } = useWrite();
   const [target, setTarget] = useState(String(initial.target_calories));
   const [carbs, setCarbs] = useState(String(initial.carbs_pct));
   const [protein, setProtein] = useState(String(initial.protein_pct));
@@ -47,27 +45,18 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
       setMsg({ kind: "err", text: "Millilitres per bottle must be greater than 0." });
       return;
     }
-    const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setMsg({ kind: "err", text: "Saving is disabled in the demo — sign in to track your own." });
-      return;
-    }
-    const { error } = await supabase.from("settings").upsert({
-      user_id: userData.user.id,
-      target_calories: t,
-      carbs_pct: c,
-      protein_pct: p,
-      fat_pct: f,
-      bottle_ml: ml,
-      updated_at: new Date().toISOString(),
-    });
-    if (error) {
-      setMsg({ kind: "err", text: error.message });
-      return;
-    }
-    setMsg({ kind: "ok", text: "Saved." });
-    startTransition(() => router.refresh());
+    const saved = await run(({ supabase, userId }) =>
+      supabase.from("settings").upsert({
+        user_id: userId,
+        target_calories: t,
+        carbs_pct: c,
+        protein_pct: p,
+        fat_pct: f,
+        bottle_ml: ml,
+        updated_at: new Date().toISOString(),
+      }),
+    );
+    if (saved) setMsg({ kind: "ok", text: "Saved." });
   }
 
   return (
@@ -93,11 +82,14 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         <span className={sum === 100 ? "text-emerald-600" : "text-amber-600"}>
           Total: {sum}%
         </span>
-        {msg && (
+        {/* Write failures come from useWrite; validation and success from msg. */}
+        {error ? (
+          <span className="text-red-600">{error}</span>
+        ) : msg ? (
           <span className={msg.kind === "ok" ? "text-emerald-600" : "text-red-600"}>
             {msg.text}
           </span>
-        )}
+        ) : null}
       </div>
 
       <label className="block border-t border-zinc-200 pt-4 dark:border-zinc-800">
@@ -118,10 +110,10 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={busy}
         className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "Saving..." : "Save"}
+        {busy ? "Saving..." : "Save"}
       </button>
     </form>
   );

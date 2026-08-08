@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useMemo, useRef, useState } from "react";
+import { newId, useWrite } from "../useWrite";
 
 export type MealPreset = {
   name: string;
@@ -12,13 +11,11 @@ export type MealPreset = {
 };
 
 export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run, busy, error } = useWrite();
   const [name, setName] = useState("");
   const [carbs, setCarbs] = useState("");
   const [protein, setProtein] = useState("");
   const [fat, setFat] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -39,29 +36,21 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
-    const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setError("Saving is disabled in the demo — sign in to track your own.");
-      return;
-    }
-    const { error } = await supabase.from("meals").insert({
-      user_id: userData.user.id,
-      name: name || null,
-      carbs_g: Number(carbs) || 0,
-      protein_g: Number(protein) || 0,
-      fat_g: Number(fat) || 0,
-    });
-    if (error) {
-      setError(error.message);
-      return;
-    }
+    const saved = await run(({ supabase, userId }) =>
+      supabase.from("meals").insert({
+        id: newId(),
+        user_id: userId,
+        name: name || null,
+        carbs_g: Number(carbs) || 0,
+        protein_g: Number(protein) || 0,
+        fat_g: Number(fat) || 0,
+      }),
+    );
+    if (!saved) return;
     setName("");
     setCarbs("");
     setProtein("");
     setFat("");
-    startTransition(() => router.refresh());
   }
 
   const showSuggestions = focused && matches.length > 0;
@@ -115,10 +104,10 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={pending}
+        disabled={busy}
         className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "Adding..." : "Add meal"}
+        {busy ? "Adding..." : "Add meal"}
       </button>
     </form>
   );

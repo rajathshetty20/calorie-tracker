@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import type { ExerciseSet } from "@/lib/types";
+import { newId, useWrite } from "../useWrite";
 
 export type ExercisePreset = {
   name: string;
@@ -19,11 +18,9 @@ function summary(sets: ExerciseSet[]) {
 }
 
 export default function ExerciseForm({ presets = [] }: { presets?: ExercisePreset[] }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run, busy, error, setError } = useWrite();
   const [name, setName] = useState("");
   const [rows, setRows] = useState<SetRow[]>([EMPTY_ROW]);
-  const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -71,24 +68,12 @@ export default function ExerciseForm({ presets = [] }: { presets?: ExercisePrese
       setError("Add at least one set with reps.");
       return;
     }
-    const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setError("Saving is disabled in the demo — sign in to track your own.");
-      return;
-    }
-    const { error } = await supabase.from("exercises").insert({
-      user_id: userData.user.id,
-      name: trimmed,
-      sets,
-    });
-    if (error) {
-      setError(error.message);
-      return;
-    }
+    const saved = await run(({ supabase, userId }) =>
+      supabase.from("exercises").insert({ id: newId(), user_id: userId, name: trimmed, sets }),
+    );
+    if (!saved) return;
     setName("");
     setRows([EMPTY_ROW]);
-    startTransition(() => router.refresh());
   }
 
   const showSuggestions = focused && matches.length > 0;
@@ -183,10 +168,10 @@ export default function ExerciseForm({ presets = [] }: { presets?: ExercisePrese
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={pending}
+        disabled={busy}
         className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
-        {pending ? "Logging..." : "Log exercise"}
+        {busy ? "Logging..." : "Log exercise"}
       </button>
     </form>
   );

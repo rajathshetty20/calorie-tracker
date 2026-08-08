@@ -116,6 +116,22 @@ export function displayCategory(category: string) {
   return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
+export type WeightPoint = { date: string; kg: number };
+
+// Change between the most recent weigh-in and the nearest one at least a week
+// older. Null when there isn't enough history to say anything honest.
+export function weeklyDelta(points: WeightPoint[]): number | null {
+  if (points.length < 2) return null;
+  const sorted = [...points].sort((a, b) => b.date.localeCompare(a.date));
+  const latest = sorted[0];
+  const cutoff = new Date(`${latest.date}T12:00:00`);
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffISO = cutoff.toISOString().slice(0, 10);
+  const older = sorted.find((p) => p.date <= cutoffISO);
+  if (!older) return null;
+  return Math.round((latest.kg - older.kg) * 10) / 10;
+}
+
 // Mean and population standard deviation over a set of values.
 export function meanStd(values: number[]): { mean: number; std: number; n: number } {
   const n = values.length;

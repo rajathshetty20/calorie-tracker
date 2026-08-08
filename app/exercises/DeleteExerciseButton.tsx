@@ -1,37 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { DEMO_MESSAGE, useWrite } from "../useWrite";
 
 export default function DeleteExerciseButton({ id }: { id: string }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [blocked, setBlocked] = useState(false);
+  const { run, busy, error } = useWrite();
 
-  async function onDelete() {
-    const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setBlocked(true); // demo mode: reads only
-      return;
-    }
-    await supabase.from("exercises").delete().eq("id", id);
-    startTransition(() => router.refresh());
-  }
-
-  if (blocked) {
+  if (error === DEMO_MESSAGE) {
     return <span className="text-xs text-amber-600 dark:text-amber-400">read-only</span>;
   }
   return (
     <button
       type="button"
-      onClick={onDelete}
-      disabled={pending}
+      onClick={() =>
+        run(({ supabase }) => supabase.from("exercises").delete().eq("id", id))
+      }
+      disabled={busy}
       aria-label="Delete exercise"
+      title={error ?? undefined}
       className="-my-1.5 rounded-md px-2 py-1.5 text-xs text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
     >
-      Remove
+      {error ? "Retry" : "Remove"}
     </button>
   );
 }
