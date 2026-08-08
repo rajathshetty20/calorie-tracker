@@ -38,10 +38,15 @@
   --chart-grid: #e6e7ea;
   --chart-cursor: rgba(22, 25, 29, 0.04);
   /* Categorical series, fixed assignment order (CVD/contrast validated). */
+  /* Order matters: hues are assigned in sequence and never cycled, so the
+     ADJACENT pairs are what a reader has to tell apart. Green and crimson sat
+     next to each other and separated by only ΔE 6.0 under deuteranopia.
+     Validated with the dataviz palette checker — all checks pass in both
+     themes. Re-run it before changing any value or the order. */
   --cat-1: #0369a1;
   --cat-2: #b45309;
-  --cat-3: #6d28d9;
-  --cat-4: #047857;
+  --cat-3: #047857;
+  --cat-4: #6d28d9;
   --cat-5: #be123c;
   --cat-6: #0891b2;
   --cat-7: #ea580c;
@@ -75,14 +80,18 @@
     --chart-surface: #141619;
     --chart-grid: #24272c;
     --chart-cursor: rgba(233, 235, 238, 0.06);
-    --cat-1: #4cabe8;
-    --cat-2: #f0a63a;
-    --cat-3: #a78bfa;
-    --cat-4: #34d399;
-    --cat-5: #fb7185;
-    --cat-6: #22b8cf;
-    --cat-7: #fb923c;
-    --cat-8: #c084fc;
+    /* Deeper steps than the light set: on the dark surface the previous
+       values sat above the lightness band and the rose/green adjacency fell
+       to ΔE 4.6 under deuteranopia, below the level any secondary encoding
+       can excuse. Validated; re-run the checker before editing. */
+    --cat-1: #3585bd;
+    --cat-2: #bb7f28;
+    --cat-3: #23926d;
+    --cat-4: #7d6bcd;
+    --cat-5: #c85267;
+    --cat-6: #00959f;
+    --cat-7: #bc6634;
+    --cat-8: #8f68c6;
     --cat-other: #737b87;
   }
 }

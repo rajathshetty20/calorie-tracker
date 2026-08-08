@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
-  Area,
+  Bar,
   CartesianGrid,
   ComposedChart,
   Line,
@@ -165,12 +165,6 @@ export default function ExerciseChart({
         <div className={CHART_BODY} ref={ref}>
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="exerciseGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -178,20 +172,35 @@ export default function ExerciseChart({
                 {...AXIS_PROPS}
                 {...xTickProps(range)} />
               <YAxis
-                domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
+                domain={metric === "volume" ? [0, "auto"] : [Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
                 width={38}
                 tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))} />
               <Tooltip content={<ExerciseTooltip metric={metric} smoothing={smoothing} />} />
-              <Area type="monotone"
-                dataKey={smoothing ? "smooth" : "value"} stroke="#8b5cf6"
-                strokeWidth={2.5} fill="url(#exerciseGradient)"
-                dot={data.length <= DOT_LIMIT ? { r: 3, fill: "#8b5cf6" } : false}
-                activeDot={{ r: 5, fill: "#8b5cf6", stroke: "var(--chart-surface)", strokeWidth: 2 }}
-                isAnimationActive={false} />
+              {/* Volume is a quantity accumulated in a session, so it gets bars
+                  from a zero baseline. Top set and 1RM are levels, not totals,
+                  and the axis does not start at zero — a line, never a fill. */}
+              {metric === "volume" ? (
+                <Bar
+                  dataKey={smoothing ? "smooth" : "value"}
+                  fill="var(--exercise)"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
+                />
+              ) : (
+                <Line
+                  type="monotone"
+                  dataKey={smoothing ? "smooth" : "value"}
+                  stroke="var(--exercise)"
+                  strokeWidth={2.5}
+                  dot={data.length <= DOT_LIMIT ? { r: 3, fill: "var(--exercise)" } : false}
+                  activeDot={{ r: 5, fill: "var(--exercise)", stroke: "var(--chart-surface)", strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+              )}
               {smoothing && (
                 <Line type="monotone"
-                  dataKey="value" stroke="#8b5cf6"
+                  dataKey="value" stroke="var(--exercise)"
                   strokeOpacity={0.28}
                   strokeWidth={1}
                   dot={false}

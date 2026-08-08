@@ -2,10 +2,9 @@
 
 import { useMemo } from "react";
 import {
-  Area,
+  Line,
   CartesianGrid,
   ComposedChart,
-  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -84,12 +83,6 @@ export default function WeightChart({
         <div className={CHART_BODY} ref={ref}>
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -102,18 +95,23 @@ export default function WeightChart({
                 width={38} />
               <Tooltip content={<WeightTooltip smoothing={smoothing} />} />
 
-              {/* The filled series is whichever one is the headline: the raw
+              {/* A line, not an area. An area fill measures down to the axis
+                  baseline, but this axis starts near 71kg — the shaded region
+                  would represent nothing. The headline series is the raw
                   readings when they fit, the trend when they don't. */}
-              <Area type="monotone"
-                dataKey={smoothing ? "smooth" : "kg"} stroke="#10b981"
-                strokeWidth={2.5} fill="url(#weightGradient)"
-                dot={data.length <= DOT_LIMIT ? { r: 3, fill: "#10b981" } : false}
-                activeDot={{ r: 5, fill: "#10b981", stroke: "var(--chart-surface)", strokeWidth: 2 }}
-                isAnimationActive={false} />
+              <Line
+                type="monotone"
+                dataKey={smoothing ? "smooth" : "kg"}
+                stroke="var(--weight)"
+                strokeWidth={2.5}
+                dot={data.length <= DOT_LIMIT ? { r: 3, fill: "var(--weight)" } : false}
+                activeDot={{ r: 5, fill: "var(--weight)", stroke: "var(--chart-surface)", strokeWidth: 2 }}
+                isAnimationActive={false}
+              />
               {smoothing && (
                 <Line type="monotone"
-                  dataKey="kg" stroke="#10b981"
-                  strokeOpacity={0.28}
+                  dataKey="kg" stroke="var(--weight)"
+                  strokeOpacity={0.3}
                   strokeWidth={1}
                   dot={false}
                   activeDot={false}

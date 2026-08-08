@@ -3,30 +3,37 @@
 import { useMemo } from "react";
 import {
   Area,
+  AreaChart,
   CartesianGrid,
-  ComposedChart,
   Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { AXIS_PROPS, CHART_BODY, fmtFullDate, fmtTick, TooltipCard, xTickProps } from "./chartParts";
+import { AXIS_PROPS, fmtFullDate, fmtTick, TooltipCard, xTickProps } from "./chartParts";
 import { useRange } from "./RangeContext";
 
 type Point = { date: string; kcal: number | null; kg: number | null };
 
 /**
- * The one chart this dataset exists to produce: intake against the thing
- * intake is supposed to move. Neither series is legible raw — daily calories
- * swing hundreds and scale weight swings with hydration — so both are shown
- * as 7-day rolling means. The correlation only appears once they're smoothed.
+ * Calories against the thing calories are supposed to move.
+ *
+ * Deliberately NOT a dual-axis chart. Two y-scales let you manufacture any
+ * correlation you like by choosing where the scales cross, and in the earlier
+ * version the weight line sat inside the calorie area fill and read as a
+ * component of it. Stacked panels sharing one x-axis show the same comparison
+ * without asserting a relationship the data may not support.
+ *
+ * Both series are 7-day rolling means: daily intake swings by hundreds and
+ * scale weight swings with hydration, so neither is legible raw.
  */
 export default function CaloriesWeightChart({
   calories,
   weights,
 }: {
-  calories: { date: string; total_kcal: number }[]; // continuous, full lookback
+  calories: { date: string; total_kcal: number }[];
   weights: { date: string; kg: number }[];
 }) {
   const { range } = useRange();
@@ -37,18 +44,19 @@ export default function CaloriesWeightChart({
 
     // Only logged days feed the calorie mean; a blank day is missing data,
     // not a zero-calorie day, and averaging the zeros would invent a dip.
-    const kcalLogged = days.map((d) => (d.total_kcal > 0 ? d.total_kcal : null));
-    const kcalSmooth = smoothSparse(kcalLogged, 7);
+    const kcalSmooth = smoothSparse(
+      days.map((d) => (d.total_kcal > 0 ? d.total_kcal : null)),
+      7,
+    );
 
-    // Weight is carried forward before smoothing so a skipped weigh-in leaves
-    // a flat segment rather than a hole in the line. Built by pushing rather
-    // than mutating a closed-over variable, which the React compiler rejects.
-    const kgFilled: (number | null)[] = [];
+    // Weight carries forward across skipped weigh-ins so a gap reads as a
+    // flat segment rather than a hole.
+    const filled: (number | null)[] = [];
     for (const d of days) {
       const v = byDate.get(d.date);
-      kgFilled.push(v !== undefined ? v : (kgFilled.at(-1) ?? null));
+      filled.push(v !== undefined ? v : (filled.at(-1) ?? null));
     }
-    const kgSmooth = smoothSparse(kgFilled, 7);
+    const kgSmooth = smoothSparse(filled, 7);
 
     return days.map((d, i) => ({
       date: d.date,
@@ -58,11 +66,19 @@ export default function CaloriesWeightChart({
   }, [calories, weights, range]);
 
   const kgs = data.map((d) => d.kg).filter((v): v is number => v !== null);
+  const hasBoth = data.some((d) => d.kcal !== null) && kgs.length > 0;
   const kgMin = kgs.length ? Math.min(...kgs) : 0;
   const kgMax = kgs.length ? Math.max(...kgs) : 0;
-  const pad = Math.max(0.5, (kgMax - kgMin) * 0.3);
+  const pad = Math.max(0.3, (kgMax - kgMin) * 0.25);
 
-  const hasBoth = data.some((d) => d.kcal !== null) && kgs.length > 0;
+  const axis = (
+    <XAxis
+      dataKey="date"
+      tickFormatter={(v: string) => fmtTick(v, range)}
+      {...AXIS_PROPS}
+      {...xTickProps(range)}
+    />
+  );
 
   return (
     <section className="border-t border-rule pt-3">
@@ -76,85 +92,81 @@ export default function CaloriesWeightChart({
       </div>
 
       {!hasBoth ? (
-        <div className={`${CHART_BODY} flex items-center justify-center`}>
+        <div className="flex h-56 items-center justify-center sm:h-72">
           <p className="text-center text-[0.8125rem] text-ink-3">
             Needs both meals and weigh-ins in this range to compare.
           </p>
         </div>
       ) : (
-        <>
-          <div className={CHART_BODY}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <ComposedChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="kcalFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--food)" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="var(--food)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(v: string) => fmtTick(v, range)}
-                  {...AXIS_PROPS}
-                  {...xTickProps(range)}
-                />
-                <YAxis yAxisId="kcal" {...AXIS_PROPS} width={40} />
-                <YAxis
-                  yAxisId="kg"
-                  orientation="right"
-                  domain={[Math.floor(kgMin - pad), Math.ceil(kgMax + pad)]}
-                  {...AXIS_PROPS}
-                  width={34}
-                />
-                <Tooltip content={<BothTooltip />} />
-                <Area
-                  yAxisId="kcal"
-                  type="monotone"
-                  dataKey="kcal"
-                  stroke="var(--food)"
-                  strokeWidth={2}
-                  fill="url(#kcalFill)"
-                  dot={false}
-                  connectNulls
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="kg"
-                  type="monotone"
-                  dataKey="kg"
-                  stroke="var(--weight)"
-                  strokeWidth={2.5}
-                  dot={false}
-                  connectNulls
-                  isAnimationActive={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-3 text-[0.75rem] text-ink-3">
-            <Key color="var(--food)" label="Calories (left)" />
-            <Key color="var(--weight)" label="Weight (right)" />
-          </div>
-        </>
+        <div className="space-y-1">
+          <Panel label="Calories / day">
+            <AreaChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }} syncId="calwt">
+              <defs>
+                <linearGradient id="kcalFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--food)" stopOpacity={0.22} />
+                  <stop offset="100%" stopColor="var(--food)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+              {axis}
+              <YAxis {...AXIS_PROPS} width={44} domain={[0, "auto"]} />
+              <Tooltip content={<PanelTooltip unit=" kcal/day" field="kcal" />} />
+              <Area
+                type="monotone"
+                dataKey="kcal"
+                stroke="var(--food)"
+                strokeWidth={2}
+                fill="url(#kcalFill)"
+                dot={false}
+                connectNulls
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </Panel>
+
+          <Panel label="Weight">
+            <LineChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }} syncId="calwt">
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+              {axis}
+              <YAxis
+                {...AXIS_PROPS}
+                width={44}
+                domain={[Math.floor((kgMin - pad) * 10) / 10, Math.ceil((kgMax + pad) * 10) / 10]}
+              />
+              <Tooltip content={<PanelTooltip unit=" kg" field="kg" />} />
+              <Line
+                type="monotone"
+                dataKey="kg"
+                stroke="var(--weight)"
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </Panel>
+        </div>
       )}
     </section>
   );
 }
 
-function Key({ color, label }: { color: string; label: string }) {
+// Each panel names its own series, so no legend is needed and no colour has
+// to carry identity on its own.
+function Panel({ label, children }: { label: string; children: React.ReactElement }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: color }} />
-      {label}
-    </span>
+    <div>
+      <div className="text-[0.6875rem] font-medium uppercase tracking-wide text-ink-3">{label}</div>
+      <div className="h-28 w-full sm:h-36">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+          {children}
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
 
-/**
- * Centred rolling mean that skips gaps rather than counting them as zero,
- * and divides by the number of values actually present in each window.
- */
+/** Centred rolling mean that skips gaps rather than counting them as zero. */
 function smoothSparse(values: (number | null)[], window: number): (number | null)[] {
   const half = Math.floor(window / 2);
   return values.map((_, i) => {
@@ -172,22 +184,26 @@ function smoothSparse(values: (number | null)[], window: number): (number | null
 }
 
 type Item = { payload?: Point };
-function BothTooltip({
+function PanelTooltip({
   active,
   payload,
   label,
+  unit,
+  field,
 }: {
   active?: boolean;
   payload?: Item[];
   label?: string;
+  unit: string;
+  field: "kcal" | "kg";
 }) {
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0].payload;
   if (!row) return null;
+  const v = row[field];
   return (
-    <TooltipCard title={fmtFullDate(label)} subtitle="7-day averages">
-      <div className="tnum">{row.kcal === null ? "—" : `${row.kcal.toLocaleString()} kcal/day`}</div>
-      <div className="tnum text-ink-3">{row.kg === null ? "—" : `${row.kg} kg`}</div>
+    <TooltipCard title={fmtFullDate(label)} subtitle="7-day average">
+      <div className="tnum">{v === null ? "—" : `${v.toLocaleString()}${unit}`}</div>
     </TooltipCard>
   );
 }
