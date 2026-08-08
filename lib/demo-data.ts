@@ -82,6 +82,11 @@ function pick<T>(rnd: () => number, arr: T[]): T {
 
 export function demoData() {
   const rnd = mulberry32(20260718);
+  // Nothing on today may lie in the future. The generator lays out a whole
+  // day at fixed clock times, so before this a visitor at 04:00 saw a meal
+  // eaten at 08:30 and a gym session at 19:00 that had not happened — and the
+  // running timer sat above them instead of being the most recent thing.
+  const nowMs = Date.now();
   const meals: Meal[] = [];
   const water: Water[] = [];
   const weights: Weight[] = [];
@@ -104,13 +109,20 @@ export function demoData() {
       const mm = String(within % 60).padStart(2, "0");
       return atZone(addDaysISO(dateISO, dayOffset), `${hh}:${mm}`);
     };
+    const startedAt = toStamp(startMin);
+    if (Date.parse(startedAt) >= nowMs) return; // hasn't begun yet
+    // An interval still in progress is truncated to now rather than dropped,
+    // so last night's sleep still demonstrates the midnight split.
+    const rawEnd = toStamp(endMin);
+    const endedAt = Date.parse(rawEnd) > nowMs ? new Date(nowMs).toISOString() : rawEnd;
+    if (Date.parse(endedAt) <= Date.parse(startedAt)) return;
     timeEntries.push({
       id: `demo-time-${id}`,
       user_id: DEMO_USER,
       category,
-      started_at: toStamp(startMin),
-      ended_at: toStamp(endMin),
-      created_at: toStamp(endMin),
+      started_at: startedAt,
+      ended_at: endedAt,
+      created_at: endedAt,
     });
   };
 
@@ -126,7 +138,8 @@ export function demoData() {
     // by the IST offset and the timeline showed lunch at 18:30.
     const at = (time: string) => atZone(date, time);
 
-    const addMeal = (t: MealTemplate, time: string) =>
+    const addMeal = (t: MealTemplate, time: string) => {
+      if (Date.parse(at(time)) > nowMs) return;
       meals.push({
         id: `demo-meal-${date}-${time}`,
         user_id: DEMO_USER,
@@ -137,6 +150,7 @@ export function demoData() {
         fat_g: t.fat_g,
         created_at: at(time),
       });
+    };
     addMeal(pick(rnd, BREAKFASTS), "08:30");
     addMeal(pick(rnd, LUNCHES), "13:00");
     if (rnd() < 0.55) addMeal(pick(rnd, SNACKS), "17:00");
@@ -166,6 +180,7 @@ export function demoData() {
       const plan = WORKOUTS[workout % WORKOUTS.length];
       workout++;
       for (const ex of plan) {
+        if (Date.parse(at("18:30")) > nowMs) break; // session not done yet
         const kg = Math.round((ex.base + i * 0.07) / 2.5) * 2.5;
         const nSets = 3 + (rnd() < 0.5 ? 1 : 0);
         exercises.push({
