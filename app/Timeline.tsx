@@ -18,11 +18,13 @@ export default function Timeline({
   exercises,
   timeEntries,
   timeZone,
+  date,
 }: {
   meals: Meal[];
   exercises: Exercise[];
   timeEntries: TimeEntry[];
   timeZone: string;
+  date: string;
 }) {
   type Item = { key: string; at: number; domain: Domain; node: React.ReactNode };
   const items: Item[] = [];
@@ -71,7 +73,7 @@ export default function Timeline({
           <div className="min-w-0 flex-1">
             {t.ended_at ? (
               <ul>
-                <TimeEntryRow entry={t} timeZone={timeZone} />
+                <TimeEntryRow entry={t} timeZone={timeZone} date={date} />
               </ul>
             ) : (
               <div className="flex items-center justify-between gap-3 py-2">

@@ -298,7 +298,11 @@ export default async function HistoryPage({
         <p className="text-[0.8125rem] text-ink-3">Calories, water, weight, exercise, and time.</p>
       </header>
 
-      <TrendsCard trends={trends} />
+      <TrendsCard
+        trends={trends}
+        loggedDays={last7.filter((d) => d.total_kcal > 0).length}
+        totalDays={WEEK_DAYS}
+      />
 
       {/* One range for every chart, and one chart at a time: five stacked
           charts repeated the range control five times and buried any single

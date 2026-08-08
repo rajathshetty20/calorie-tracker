@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { displayCategory, fmtDuration } from "@/lib/types";
 import {
@@ -32,13 +32,17 @@ const NUDGES = [-15, -5, 5, 15] as const;
 export default function TimeEntryRow({
   entry,
   timeZone,
+  date,
 }: {
   entry: EditableEntry;
   timeZone: string;
+  /** The day being viewed, so a cross-midnight entry can name its share. */
+  date?: string;
 }) {
   const { run, busy, error } = useWrite();
   const isDemo = useIsDemo();
   const [editing, setEditing] = useState(false);
+  const panel = useRef<HTMLDivElement>(null);
   const [startIso, setStartIso] = useState(entry.started_at);
   const [endIso, setEndIso] = useState(entry.ended_at ?? entry.started_at);
 
@@ -48,6 +52,16 @@ export default function TimeEntryRow({
   const slices = splitByDay(start, end, timeZone);
   const crossesMidnight = slices.length > 1;
   const valid = end.getTime() > start.getTime();
+
+  const originalSlices = splitByDay(
+    new Date(entry.started_at),
+    new Date(entry.ended_at ?? entry.started_at),
+    timeZone,
+  );
+  const shareToday =
+    date && originalSlices.length > 1
+      ? (originalSlices.find((s) => s.date === date)?.minutes ?? 0)
+      : null;
 
   async function save() {
     if (!valid) return;
@@ -71,7 +85,18 @@ export default function TimeEntryRow({
     <li className="py-2">
       <div className="flex items-center justify-between gap-3">
         <button type="button"
-          onClick={() => !isDemo && setEditing((v) => !v)}
+          onClick={() => {
+            if (isDemo) return;
+            const next = !editing;
+            setEditing(next);
+            // The panel opens below the fold on a phone; without this the
+            // tap reads as having done nothing.
+            if (next) {
+              requestAnimationFrame(() =>
+                panel.current?.scrollIntoView({ block: "center", behavior: "smooth" }),
+              );
+            }
+          }}
           aria-expanded={isDemo ? undefined : editing}
           title={isDemo ? "Sign in to adjust entries" : "Adjust start and end"}
  className="min-w-0 flex-1 text-left" >
@@ -86,13 +111,17 @@ export default function TimeEntryRow({
             )}
           </div>
         </button>
-        <span className="shrink-0 text-[0.8125rem] text-ink-3 tabular-nums">
+        <span className="shrink-0 text-right text-[0.8125rem] text-ink-3 tabular-nums">
           {fmtDuration(spanMinutes(originalStart, originalEnd))}
+          {shareToday !== null && (
+            // The tile beside this counts only the part that fell on this day.
+            <span className="block text-[0.6875rem]">{fmtDuration(shareToday)} today</span>
+          )}
         </span>
       </div>
 
       {editing && (
-        <div className="mt-2 space-y-3 rounded-lg border border-rule p-3">
+        <div ref={panel} className="mt-2 space-y-3 rounded-lg border border-rule p-3">
           <Field label="Start"
             iso={startIso}
             timeZone={timeZone}
@@ -161,8 +190,8 @@ function Field({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="w-10 shrink-0 text-[0.75rem] text-ink-3">{label}</span>
+    <div className="space-y-1">
+      <span className="block text-[0.75rem] text-ink-3">{label}</span>
       <input type="datetime-local"
         value={`${date}T${time}`}
         onChange={(e) => {
@@ -170,7 +199,7 @@ function Field({
           if (d && t) onChange(instantFromLocal(d, t.slice(0, 5), timeZone).toISOString());
         }}
         aria-label={`${label} time`}
- className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-2 py-1.5 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+ className="block w-full rounded-lg border border-rule bg-surface px-2 py-2 tabular-nums outline-none focus:border-ink" />
       <span className="inline-flex overflow-hidden rounded-lg border border-rule">
         {NUDGES.map((n) => (
           <button

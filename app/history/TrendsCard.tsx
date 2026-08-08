@@ -13,7 +13,16 @@ export type Trend = {
 
 // Period-over-period is the question a history page should answer first —
 // "is this week different from last week?" — before any chart is read.
-export default function TrendsCard({ trends }: { trends: Trend[] }) {
+export default function TrendsCard({
+  trends,
+  loggedDays,
+  totalDays,
+}: {
+  trends: Trend[];
+  /** Days in the window with any meals logged. */
+  loggedDays: number;
+  totalDays: number;
+}) {
   return (
     <section className="border-t border-rule pt-3">
       <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -22,6 +31,14 @@ export default function TrendsCard({ trends }: { trends: Trend[] }) {
         </h2>
         <span className="text-[0.8125rem] text-ink-3">vs previous 7</span>
       </div>
+      {/* These are averages over days that have data. With only some days
+          logged the headline flatters you and matches nothing, so say how
+          many days it actually covers. */}
+      {loggedDays < totalDays && (
+        <p className="mb-2 text-[0.75rem] text-ink-3">
+          Averaged over the {loggedDays} of {totalDays} days with entries.
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         {trends.map((t) => (
           <div key={t.label} className="min-w-0">

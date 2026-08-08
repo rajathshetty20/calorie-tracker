@@ -239,7 +239,8 @@ export default async function HomePage({
           meals={meals}
           exercises={exercises}
           timeEntries={timeEntries}
-          timeZone={timeZone} />
+          timeZone={timeZone}
+          date={date} />
       </Group>
     </div>
   );
