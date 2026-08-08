@@ -20,7 +20,7 @@ A self-hosted personal health dashboard: log **meals & macros, water, weight, ex
 - **Water** — tap +/− to log by the bottle (bottle size configurable), stored in ml.
 - **Weight** — one upserted entry per day, charted over time.
 - **Exercise** — log named lifts as sets (weight × reps); picking a previous exercise prefills your last session's sets so you only tweak the numbers. History charts top-set weight, volume, and estimated 1RM (Epley).
-- **Time tracking** — minutes per free-form category per day (sleep, work, …), shown as a stacked history chart.
+- **Time tracking with a stopwatch** — tap a category to start timing; starting another *switches*, closing the previous entry at the same instant so the day stays contiguous. Start with an offset (−30…+30 min) so you can set a sleep timer before you actually fall asleep. Entries are stored as intervals and can be nudged afterwards, and one that crosses midnight is divided between both days (22:00 → 06:00 counts 2h to one day and 6h to the next).
 - **History** — 90-day charts for everything, each with a 7-day average ± standard deviation.
 - **At-a-glance dashboard** — today's status (calories, macros, water, weight, exercise, time) is visible without scrolling; add-forms are collapsed behind `+ Add` disclosures.
 - **Public demo** — `/demo` mirrors Today and History with a deterministic 90-day sample dataset, reached via a "Browse the demo" link on the login page. The full UI is explorable — forms, autocomplete presets, water taps — and only saving is blocked, with an inline notice at the moment of the attempt. An amber banner and nav badge mark the mode; nothing in demo mode can touch the database.
@@ -31,7 +31,9 @@ A self-hosted personal health dashboard: log **meals & macros, water, weight, ex
 - **Next.js 16 (App Router) + React 19 + TypeScript** — pages are Server Components that fetch everything for the day in one `Promise.all`; interactivity (forms, autocomplete, optimistic water taps) lives in small client components.
 - **Supabase** — Postgres with row-level security (every table is scoped to `auth.uid()`), magic-link email auth, and session refresh handled in Next.js middleware.
 - **Tailwind CSS 4** for styling, **Recharts 3** for charts, **Vercel** for hosting.
-- Natural-key upserts (`user_id + date`, plus category for time) keep daily singletons like water/weight/time idempotent — re-logging replaces instead of duplicating.
+- Natural-key upserts (`user_id + date`) keep daily singletons like water and weight idempotent — re-logging replaces instead of duplicating.
+- **Time is stored as intervals, split on read.** A cross-midnight entry belongs to two days, so no per-day column or stored duration could stay honest; `splitByDay()` distributes it against local midnights, DST included. A running stopwatch is just a row with no end yet — nothing runs in the background and a timer costs no battery.
+- Every write goes through one guarded path (`useWrite`) whose in-flight lock is set synchronously before the first `await`, so a double-tap on a slow connection can't insert twice.
 
 ## Setup
 
@@ -75,14 +77,16 @@ app/
   WeightForm.tsx         # Daily weight upsert (client)
   meals/                 # MealForm with presets, DeleteMealButton
   exercises/             # ExerciseForm with set rows + prefill, delete
-  time/                  # TimeForm (per-category daily upsert), delete
+  time/                  # Stopwatch: timer bar, start/switch controls, entry editor, manual backfill
   history/               # 90-day charts: calories, water, weight, exercise, time
   demo/                  # Public demo mirrors of Today + History (sample data)
   settings/              # Target calories, macro split, bottle size
   login/                 # Magic-link form + demo entry link
   auth/                  # OAuth callback + signout routes
 lib/
-  supabase/              # Browser/server clients + middleware helper
+  time.ts                # Timezone-aware interval maths (splitByDay) + tests
+  timeEntries.ts         # Aggregation over intervals, shared by Today and History
+  supabase/              # Browser/server clients + session helper
   demo-data.ts           # Seeded 90-day sample dataset for demo mode
   types.ts               # Row types, kcal math, 1RM estimate, mean/std
 supabase/schema.sql      # Tables + RLS policies

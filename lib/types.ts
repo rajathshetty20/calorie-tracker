@@ -39,12 +39,14 @@ export type Exercise = {
   created_at: string;
 };
 
+// Stored as an interval, never as a per-day total: an entry can straddle
+// midnight, so it belongs to more than one day. See lib/time.ts#splitByDay.
 export type TimeEntry = {
   id: string;
   user_id: string;
-  spent_on: string; // YYYY-MM-DD
   category: string; // stored lowercase
-  minutes: number;
+  started_at: string; // ISO instant; may be in the future (offset start)
+  ended_at: string | null; // null while the timer is running
   created_at: string;
 };
 
@@ -55,6 +57,7 @@ export type Settings = {
   protein_pct: number;
   fat_pct: number;
   bottle_ml: number;
+  timezone: string; // IANA zone; day boundaries are resolved server-side
   updated_at: string;
 };
 

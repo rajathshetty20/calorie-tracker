@@ -49,18 +49,31 @@ create table if not exists public.exercises (
 );
 create index if not exists exercises_user_day on public.exercises (user_id, performed_on desc);
 
--- Time spent per day per category (category is stored lowercase; one row
--- per user+day+category, updated in place).
-create table if not exists public.time_entries (
+-- Time is stored as intervals, not per-day totals. An entry that crosses
+-- midnight (sleep 22:00 -> 06:00) belongs to both days, so there is no
+-- spent_on column and no stored duration: a row would have to lie about one
+-- or the other. splitByDay() in lib/time.ts distributes an interval across
+-- local days at read time, and a day query is an overlap test:
+--   started_at < day_end and (ended_at is null or ended_at > day_start)
+--
+-- A running stopwatch is simply a row with ended_at null. started_at may be
+-- in the future — that is how "start sleep in 15 minutes" works, with no
+-- scheduling anywhere.
+drop table if exists public.time_entries;
+create table public.time_entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users on delete cascade,
-  spent_on date not null default current_date,
   category text not null,
-  minutes integer not null check (minutes > 0),
+  started_at timestamptz not null,
+  ended_at timestamptz,
   created_at timestamptz not null default now(),
-  unique (user_id, spent_on, category)
+  check (ended_at is null or ended_at > started_at)
 );
-create index if not exists time_entries_user_day on public.time_entries (user_id, spent_on desc);
+create index if not exists time_entries_user_span on public.time_entries (user_id, started_at desc);
+-- At most one running timer per user. Starting another category is a switch
+-- that closes the current entry in the same transaction.
+create unique index if not exists time_entries_one_live
+  on public.time_entries (user_id) where ended_at is null;
 
 create table if not exists public.settings (
   user_id uuid primary key references auth.users on delete cascade,
@@ -69,11 +82,47 @@ create table if not exists public.settings (
   protein_pct integer not null default 30 check (protein_pct between 0 and 100),
   fat_pct integer not null default 30 check (fat_pct between 0 and 100),
   bottle_ml integer not null default 1000 check (bottle_ml > 0),
+  -- Day boundaries (including the midnight split) are resolved server-side,
+  -- so the timezone cannot be read off the browser.
+  timezone text not null default 'Asia/Kolkata',
   updated_at timestamptz not null default now(),
   check (carbs_pct + protein_pct + fat_pct = 100)
 );
--- For databases created before bottle_ml existed.
+-- For databases created before these columns existed.
 alter table public.settings add column if not exists bottle_ml integer not null default 1000 check (bottle_ml > 0);
+alter table public.settings add column if not exists timezone text not null default 'Asia/Kolkata';
+
+-- Starting a timer while one runs is a *switch*: the previous entry closes at
+-- the same instant the new one opens, so the day stays contiguous with no gap
+-- and no second tap. Both writes must land together — a failure between them
+-- would leave you with two running timers or none — so it is one function.
+create or replace function public.start_timer(p_category text, p_started_at timestamptz)
+returns public.time_entries
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_row public.time_entries;
+begin
+  -- Close the running entry at the handover point. An offset start in the
+  -- future shouldn't backdate the close past now, and one in the past must
+  -- still leave the old entry with a positive duration.
+  update public.time_entries
+     set ended_at = greatest(started_at + interval '1 second',
+                             least(p_started_at, now()))
+   where user_id = auth.uid()
+     and ended_at is null;
+
+  insert into public.time_entries (user_id, category, started_at)
+  values (auth.uid(), lower(trim(p_category)), p_started_at)
+  returning * into v_row;
+
+  return v_row;
+end;
+$$;
+
+grant execute on function public.start_timer(text, timestamptz) to authenticated;
 
 grant select, insert, update, delete on public.meals to authenticated;
 grant select, insert, update, delete on public.weights to authenticated;

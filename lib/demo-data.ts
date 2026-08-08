@@ -1,4 +1,5 @@
 import { isoDaysAgo, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "./types";
+import { addDaysISO, instantFromLocal } from "./time";
 
 // Sample dataset for logged-out demo mode: 90 days of realistic entries,
 // generated from a fixed seed so every visit sees the same data (dates
@@ -6,6 +7,14 @@ import { isoDaysAgo, type Exercise, type Meal, type Settings, type TimeEntry, ty
 
 const DAYS = 90;
 const DEMO_USER = "demo";
+// The demo dataset is rendered in one fixed zone so the sample intervals land
+// on the days they were designed for, whoever is looking.
+export const DEMO_TIME_ZONE = "Asia/Kolkata";
+
+// Local wall clock on a demo day -> ISO instant.
+function at(dateISO: string, hhmm: string) {
+  return instantFromLocal(dateISO, hhmm, DEMO_TIME_ZONE).toISOString();
+}
 
 function mulberry32(seed: number) {
   return () => {
@@ -71,6 +80,32 @@ export function demoData() {
   const exercises: Exercise[] = [];
   const timeEntries: TimeEntry[] = [];
 
+  // Minutes-from-local-midnight -> an interval, rolling into the next day
+  // automatically when the end passes 24:00.
+  const pushSpan = (
+    id: string,
+    category: string,
+    dateISO: string,
+    startMin: number,
+    endMin: number,
+  ) => {
+    const toStamp = (mins: number) => {
+      const dayOffset = Math.floor(mins / 1440);
+      const within = mins - dayOffset * 1440;
+      const hh = String(Math.floor(within / 60)).padStart(2, "0");
+      const mm = String(within % 60).padStart(2, "0");
+      return at(addDaysISO(dateISO, dayOffset), `${hh}:${mm}`);
+    };
+    timeEntries.push({
+      id: `demo-time-${id}`,
+      user_id: DEMO_USER,
+      category,
+      started_at: toStamp(startMin),
+      ended_at: toStamp(endMin),
+      created_at: toStamp(endMin),
+    });
+  };
+
   let workout = 0;
   for (let i = 0; i < DAYS; i++) {
     const daysAgo = DAYS - 1 - i;
@@ -133,44 +168,44 @@ export function demoData() {
           created_at: at("18:30"),
         });
       }
-      timeEntries.push({
-        id: `demo-time-${date}-gym`,
-        user_id: DEMO_USER,
-        spent_on: date,
-        category: "gym",
-        minutes: 60 + Math.floor(rnd() * 7) * 5,
-        created_at: at("19:45"),
-      });
+      const gymStart = 18 * 60 + 30 + Math.floor(rnd() * 5) * 15;
+      pushSpan(`gym-${date}`, "gym", date, gymStart, gymStart + 60 + Math.floor(rnd() * 7) * 5);
     }
-    timeEntries.push({
-      id: `demo-time-${date}-sleep`,
-      user_id: DEMO_USER,
-      spent_on: date,
-      category: "sleep",
-      minutes: 390 + Math.floor(rnd() * 7) * 15,
-      created_at: at("07:30"),
-    });
-    if (weekday >= 1 && weekday <= 5) {
-      timeEntries.push({
-        id: `demo-time-${date}-work`,
-        user_id: DEMO_USER,
-        spent_on: date,
-        category: "work",
-        minutes: 420 + Math.floor(rnd() * 9) * 15,
-        created_at: at("18:00"),
-      });
+
+    // Sleep deliberately crosses midnight — it is the case the whole interval
+    // model exists for, and the only one that exercises the split in the demo.
+    // The night that begins today has not happened yet, so it is skipped.
+    if (!isToday) {
+      const bedtime = 22 * 60 + Math.floor(rnd() * 5) * 15; // 22:00–23:00
+      pushSpan(
+        `sleep-${date}`,
+        "sleep",
+        date,
+        bedtime,
+        bedtime + 390 + Math.floor(rnd() * 7) * 15,
+      );
     }
-    if (rnd() < 0.4) {
-      timeEntries.push({
-        id: `demo-time-${date}-reading`,
-        user_id: DEMO_USER,
-        spent_on: date,
-        category: "reading",
-        minutes: 30 + Math.floor(rnd() * 4) * 15,
-        created_at: at("22:00"),
-      });
+
+    if (weekday >= 1 && weekday <= 5 && !isToday) {
+      const workStart = 9 * 60 + 30;
+      pushSpan(`work-${date}`, "work", date, workStart, workStart + 420 + Math.floor(rnd() * 9) * 15);
+    }
+    if (rnd() < 0.4 && !isToday) {
+      pushSpan(`reading-${date}`, "reading", date, 21 * 60, 21 * 60 + 30 + Math.floor(rnd() * 4) * 15);
     }
   }
+
+  // One live timer, so a visitor actually sees the running bar and its dial.
+  // Started 2h 20m ago and still going.
+  const liveStart = new Date(Date.now() - 140 * 60_000).toISOString();
+  timeEntries.push({
+    id: "demo-time-live",
+    user_id: DEMO_USER,
+    category: "work",
+    started_at: liveStart,
+    ended_at: null,
+    created_at: liveStart,
+  });
 
   const settings: Settings = {
     user_id: DEMO_USER,
@@ -179,6 +214,7 @@ export function demoData() {
     protein_pct: 30,
     fat_pct: 30,
     bottle_ml: 500,
+    timezone: DEMO_TIME_ZONE,
     updated_at: isoDaysAgo(0),
   };
 

@@ -1,19 +1,27 @@
 import { Droplet, Drumstick, Wheat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { demoData } from "@/lib/demo-data";
-import { displayCategory, fmtDuration, mealCalories, plural, todayISO, weeklyDelta, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type WeightPoint, KCAL_PER_G } from "@/lib/types";
+import { fmtDuration, mealCalories, plural, weeklyDelta, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type WeightPoint, KCAL_PER_G } from "@/lib/types";
+import { localDateISO, localDayRange } from "@/lib/time";
+import { overlapsDay, totalsOnDay } from "@/lib/timeEntries";
 import CaloriesCard from "./CaloriesCard";
 import MealForm, { type MealPreset } from "./meals/MealForm";
 import DeleteMealButton from "./meals/DeleteMealButton";
 import ExerciseForm, { type ExercisePreset } from "./exercises/ExerciseForm";
 import DeleteExerciseButton from "./exercises/DeleteExerciseButton";
 import TimeForm from "./time/TimeForm";
-import DeleteTimeEntryButton from "./time/DeleteTimeEntryButton";
+import TimeEntryRow from "./time/TimeEntryRow";
+import TimerBar from "./time/TimerBar";
+import TimerControls from "./time/TimerControls";
 import WaterTracker from "./WaterTracker";
 import WeightForm from "./WeightForm";
 import AddDisclosure from "./AddDisclosure";
 import Tile from "./Tile";
 import DemoBanner from "./DemoBanner";
+
+// Fallback zone when settings have not been saved yet, and the zone the demo
+// dataset is rendered in.
+const DEMO_TZ = "Asia/Kolkata";
 
 type RecentMeal = Pick<Meal, "name" | "carbs_g" | "protein_g" | "fat_g">;
 type RecentExercise = Pick<Exercise, "name" | "sets">;
@@ -29,23 +37,30 @@ type TodayData = {
   recentExercises: RecentExercise[];
   timeEntries: TimeEntry[];
   recentTimeCategories: string[];
+  timeZone: string;
+  today: string;
 };
 
-async function loadToday(today: string): Promise<TodayData> {
+async function loadToday(): Promise<TodayData> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
+    const timeZone = DEMO_TZ;
+    const today = localDateISO(new Date(), timeZone);
     // Demo mode: same shapes, sample data — including recent-entry presets
     // so the autocomplete dropdowns are fully explorable. Saves are blocked
     // in the forms themselves (no session).
     const demo = demoData();
     const desc = (a: { created_at: string }, b: { created_at: string }) =>
       b.created_at.localeCompare(a.created_at);
+    const { start: dayStart, end: dayEnd } = localDayRange(today, timeZone);
     return {
       isDemo: true,
+      timeZone,
+      today,
       meals: demo.meals.filter((m) => m.eaten_on === today).sort(desc),
       settings: demo.settings,
       recentMeals: [...demo.meals].sort(desc),
@@ -56,14 +71,23 @@ async function loadToday(today: string): Promise<TodayData> {
         .map((w) => ({ date: w.measured_on, kg: Number(w.weight_kg) })),
       exercises: demo.exercises.filter((e) => e.performed_on === today).sort(desc),
       recentExercises: [...demo.exercises].sort(desc),
-      timeEntries: demo.timeEntries.filter((t) => t.spent_on === today),
+      timeEntries: demo.timeEntries.filter((t) => overlapsDay(t, dayStart, dayEnd)),
       recentTimeCategories: Array.from(new Set(demo.timeEntries.map((t) => t.category))),
     };
   }
 
+  // The timezone decides which calendar day "today" is, so it has to be
+  // resolved before anything else is fetched. Without this the server's own
+  // zone (UTC on Vercel) picks the day, and an IST user sees yesterday's
+  // dashboard until 05:30.
+  const { data: settingsRow } = await supabase.from("settings").select("*").single();
+  const settings = settingsRow as Settings | null;
+  const timeZone = settings?.timezone || DEMO_TZ;
+  const today = localDateISO(new Date(), timeZone);
+  const { start: dayStart, end: dayEnd } = localDayRange(today, timeZone);
+
   const [
     { data: meals },
-    { data: settings },
     { data: recent },
     { data: waterRow },
     { data: weightRows },
@@ -77,7 +101,6 @@ async function loadToday(today: string): Promise<TodayData> {
         .select("*")
         .eq("eaten_on", today)
         .order("created_at", { ascending: false }),
-      supabase.from("settings").select("*").single(),
       supabase
         .from("meals")
         .select("name,carbs_g,protein_g,fat_g,created_at")
@@ -103,8 +126,9 @@ async function loadToday(today: string): Promise<TodayData> {
       supabase
         .from("time_entries")
         .select("*")
-        .eq("spent_on", today)
-        .order("created_at", { ascending: true }),
+        .lt("started_at", dayEnd.toISOString())
+        .or(`ended_at.is.null,ended_at.gt.${dayStart.toISOString()}`)
+        .order("started_at", { ascending: true }),
       supabase
         .from("time_entries")
         .select("category,created_at")
@@ -114,8 +138,10 @@ async function loadToday(today: string): Promise<TodayData> {
 
   return {
     isDemo: false,
+    timeZone,
+    today,
     meals: (meals ?? []) as Meal[],
-    settings: settings as Settings | null,
+    settings,
     recentMeals: (recent ?? []) as RecentMeal[],
     waterMl: (waterRow as Pick<Water, "ml"> | null)?.ml ?? 0,
     weights: ((weightRows ?? []) as { measured_on: string; weight_kg: number }[]).map((w) => ({
@@ -132,9 +158,10 @@ async function loadToday(today: string): Promise<TodayData> {
 }
 
 export default async function HomePage() {
-  const today = todayISO();
   const {
     isDemo,
+    timeZone,
+    today,
     meals: list,
     settings: s,
     recentMeals,
@@ -144,7 +171,7 @@ export default async function HomePage() {
     recentExercises,
     timeEntries: timeList,
     recentTimeCategories: timeCategories,
-  } = await loadToday(today);
+  } = await loadToday();
 
   const bottleMl = s?.bottle_ml ?? 1000;
 
@@ -200,8 +227,15 @@ export default async function HomePage() {
   const setsLabel = plural(totalSets, "set");
   const exerciseSummary =
     exerciseList.length > 0 ? `${plural(exerciseList.length, "exercise")} · ${setsLabel}` : null;
-  const timeTotal = timeList.reduce((a, t) => a + t.minutes, 0);
-  const timeLabel = timeList.length > 0 ? fmtDuration(timeTotal) : null;
+  // Minutes are derived, never stored: an entry that straddles midnight
+  // contributes only its share to each day.
+  const now = new Date();
+  const todaysTotals = totalsOnDay(timeList, today, timeZone, now);
+  const timeTotal = Object.values(todaysTotals).reduce((a, b) => a + b, 0);
+  const timeLabel = timeTotal > 0 ? fmtDuration(timeTotal) : null;
+  const timeCategoryCount = Object.keys(todaysTotals).length;
+  const running = timeList.find((t) => t.ended_at === null) ?? null;
+  const finished = timeList.filter((t) => t.ended_at !== null);
   const shownWeight = todaysWeight ?? lastWeight;
   const weightLabel = shownWeight !== null ? `${shownWeight} kg` : null;
   const weightSub =
@@ -216,6 +250,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
+      {running && <TimerBar timer={running} />}
       {isDemo && <DemoBanner />}
 
       <header>
@@ -254,7 +289,7 @@ export default async function HomePage() {
         <Tile
           label="Time"
           value={timeLabel}
-          sub={timeLabel && plural(timeList.length, "category", "categories")}
+          sub={timeLabel && plural(timeCategoryCount, "category", "categories")}
         />
       </section>
 
@@ -315,24 +350,19 @@ export default async function HomePage() {
       </Section>
 
       <div className="grid gap-6 md:grid-cols-2 md:items-start">
-        <Section title="Time" summary={timeLabel && `${timeLabel} tracked`}>
-          {timeList.length === 0 ? (
+        <Section title="Time" summary={timeLabel && `${timeLabel} today`}>
+          <TimerControls categories={timeCategories} running={running} />
+          {finished.length === 0 ? (
             <EmptyNote />
           ) : (
             <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {timeList.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-3 py-2">
-                  <span className="text-sm">{displayCategory(t.category)}</span>
-                  <span className="flex items-center gap-3">
-                    <span className="text-sm text-zinc-500 tabular-nums">{fmtDuration(t.minutes)}</span>
-                    <DeleteTimeEntryButton id={t.id} />
-                  </span>
-                </li>
+              {finished.map((t) => (
+                <TimeEntryRow key={t.id} entry={t} timeZone={timeZone} />
               ))}
             </ul>
           )}
-          <AddDisclosure label="Add time">
-            <TimeForm date={today} categories={timeCategories} />
+          <AddDisclosure label="Add time manually">
+            <TimeForm timeZone={timeZone} categories={timeCategories} />
           </AddDisclosure>
         </Section>
 

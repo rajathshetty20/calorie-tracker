@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { demoData } from "@/lib/demo-data";
 import { fmtDuration, isoDaysAgo, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
+import { localDayRange } from "@/lib/time";
+import { totalsByDay } from "@/lib/timeEntries";
+import { DEMO_TIME_ZONE } from "@/lib/demo-data";
 import DemoBanner from "../DemoBanner";
 import HistoryChart, { type DayRow } from "./HistoryChart";
 import WaterChart, { type WaterDay } from "./WaterChart";
@@ -15,6 +18,7 @@ const WEEK_DAYS = 7;
 
 type HistoryData = {
   isDemo: boolean;
+  timeZone: string;
   meals: Meal[];
   water: Water[];
   weights: Weight[];
@@ -32,22 +36,36 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
   if (!user) {
     const demo = demoData();
     const inRange = (d: string) => d >= start && d <= end;
+    const windowStart = localDayRange(start, DEMO_TIME_ZONE).start;
+    const windowEnd = localDayRange(end, DEMO_TIME_ZONE).end;
     return {
       isDemo: true,
+      timeZone: DEMO_TIME_ZONE,
       meals: demo.meals.filter((m) => inRange(m.eaten_on)),
       water: demo.water.filter((w) => inRange(w.drank_on)),
       weights: demo.weights,
       settings: demo.settings,
       exercises: demo.exercises.filter((e) => inRange(e.performed_on)),
-      timeEntries: demo.timeEntries.filter((t) => inRange(t.spent_on)),
+      // Intervals are filtered by overlap, not by a day column they no longer
+      // have; splitByDay assigns them to days downstream.
+      timeEntries: demo.timeEntries.filter(
+        (t) => t.started_at < windowEnd.toISOString() &&
+          (t.ended_at === null || t.ended_at > windowStart.toISOString()),
+      ),
     };
   }
+
+  // Timezone first: it decides where the day boundaries the split clips at are.
+  const { data: settingsRow } = await supabase.from("settings").select("*").single();
+  const settings = settingsRow as Settings | null;
+  const timeZone = settings?.timezone || DEMO_TIME_ZONE;
+  const windowStart = localDayRange(start, timeZone).start;
+  const windowEnd = localDayRange(end, timeZone).end;
 
   const [
     { data: meals },
     { data: water },
     { data: weights },
-    { data: settings },
     { data: exercises },
     { data: timeEntries },
   ] = await Promise.all([
@@ -67,7 +85,6 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
         .from("weights")
         .select("*")
         .order("measured_on", { ascending: true }),
-      supabase.from("settings").select("*").single(),
       supabase
         .from("exercises")
         .select("*")
@@ -77,17 +94,18 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
       supabase
         .from("time_entries")
         .select("*")
-        .gte("spent_on", start)
-        .lte("spent_on", end)
-        .order("spent_on", { ascending: true }),
+        .lt("started_at", windowEnd.toISOString())
+        .or(`ended_at.is.null,ended_at.gt.${windowStart.toISOString()}`)
+        .order("started_at", { ascending: true }),
     ]);
 
   return {
     isDemo: false,
+    timeZone,
     meals: (meals ?? []) as Meal[],
     water: (water ?? []) as Water[],
     weights: (weights ?? []) as Weight[],
-    settings: settings as Settings | null,
+    settings,
     exercises: (exercises ?? []) as Exercise[],
     timeEntries: (timeEntries ?? []) as TimeEntry[],
   };
@@ -103,7 +121,7 @@ export default async function HistoryPage({
   const range = parseRange((await searchParams)?.range);
   const start = isoDaysAgo(LOOKBACK_DAYS - 1);
   const end = isoDaysAgo(0);
-  const { isDemo, meals, water, weights, settings: s, exercises, timeEntries } =
+  const { isDemo, timeZone, meals, water, weights, settings: s, exercises, timeEntries } =
     await loadHistory(start, end);
 
   const target = s?.target_calories ?? 2000;
@@ -149,10 +167,11 @@ export default async function HistoryPage({
     row.litres += Number(w.ml) / 1000;
   }
 
-  for (const t of timeEntries) {
-    const row = timeByDay.get(t.spent_on);
+  // One interval can land on two days; splitByDay decides how much goes where.
+  for (const [date, totals] of totalsByDay(timeEntries, timeZone, new Date())) {
+    const row = timeByDay.get(date);
     if (!row) continue;
-    row.totals[t.category] = (row.totals[t.category] ?? 0) + t.minutes;
+    row.totals = totals;
   }
 
   const rows = Array.from(byDay.values());
