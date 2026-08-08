@@ -131,7 +131,9 @@ export default function QuickAdd({
             <p className="py-6 text-center text-[0.8125rem] text-ink-3">Loading…</p>
           ) : (
             <>
-              {tab === "food" && <MealForm presets={data.mealPresets} today={target!} />}
+              {tab === "food" && (
+                <MealForm presets={data.mealPresets} today={target!} onSaved={onClose} />
+              )}
               {tab === "water" && (
                 <div className="rounded-lg border border-rule p-3">
                   <WaterTracker
@@ -142,10 +144,11 @@ export default function QuickAdd({
                 </div>
               )}
               {tab === "exercise" && (
-                <ExerciseForm presets={data.exercisePresets} today={target!} />
+                <ExerciseForm presets={data.exercisePresets} today={target!} onSaved={onClose} />
               )}
               {tab === "weight" && (
                 <WeightForm
+                  onSaved={onClose}
                   today={target!}
                   todaysWeight={data.todaysWeight}
                   lastWeight={data.lastWeight} />
@@ -157,7 +160,7 @@ export default function QuickAdd({
                     <p className="mb-2 text-[0.8125rem] font-semibold uppercase tracking-wide text-ink-2">
                       Or log a past interval
                     </p>
-                    <TimeForm timeZone={data.timeZone} categories={data.timeCategories} />
+                    <TimeForm timeZone={data.timeZone} categories={data.timeCategories} onSaved={onClose} />
                   </div>
                 </div>
               )}

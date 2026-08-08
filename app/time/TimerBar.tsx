@@ -33,11 +33,16 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
       setError("Sign in to stop timers — this one is sample data.");
       return;
     }
+    // An offset start that has not fired yet has no elapsed time, so
+    // "stopping" it means cancelling it. Writing ended_at = now() there would
+    // be earlier than started_at and violate the interval check.
     await run(({ supabase }) =>
-      supabase
-        .from("time_entries")
-        .update({ ended_at: new Date().toISOString() })
-        .eq("id", timer.id),
+      pending
+        ? supabase.from("time_entries").delete().eq("id", timer.id)
+        : supabase
+            .from("time_entries")
+            .update({ ended_at: new Date().toISOString() })
+            .eq("id", timer.id),
     );
   }
 
@@ -68,7 +73,7 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
           disabled={busy}
  className="flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[0.8125rem] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" >
           <Square className="h-3 w-3 fill-current" />
-          Stop
+          {pending ? "Cancel" : "Stop"}
         </button>
       </div>
       <div className="mt-0.5 text-[11px] text-emerald-700/80 dark:text-emerald-300/70">

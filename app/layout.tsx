@@ -6,6 +6,7 @@ import TopBar from "./TopBar";
 import BottomNav from "./BottomNav";
 import { AddSheetProvider } from "./AddSheet";
 import { DemoProvider } from "./DemoContext";
+import RunningTimer from "./time/RunningTimer";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -48,6 +49,7 @@ export default async function RootLayout({
         <DemoProvider isDemo={!user}>
         <AddSheetProvider>
           <TopBar signedIn={!!user} />
+          <RunningTimer />
           {/* Bottom padding clears the fixed nav plus the home indicator. */}
           <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 md:pb-10">
             {children}

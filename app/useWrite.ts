@@ -7,6 +7,26 @@ import { createClient } from "@/lib/supabase/client";
 
 export const DEMO_MESSAGE = "Saving is disabled in the demo — sign in to track your own.";
 
+/**
+ * Database errors are written for operators, not people. A check-constraint
+ * violation reached the UI verbatim as
+ * `new row for relation "time_entries" violates check constraint …`.
+ */
+function humanise(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("time_entries_check") || m.includes("violates check constraint"))
+    return "That would end the entry before it starts. Adjust the times and try again.";
+  if (m.includes("time_entries_one_live"))
+    return "A timer is already running. Stop it first, or tap another activity to switch.";
+  if (m.includes("duplicate key"))
+    return "That entry already exists.";
+  if (m.includes("row-level security") || m.includes("permission denied"))
+    return "You don't have access to that. Try signing in again.";
+  if (m.includes("failed to fetch") || m.includes("networkerror"))
+    return "Couldn't reach the server — check your connection.";
+  return message;
+}
+
 type WriteContext = { supabase: SupabaseClient; userId: string };
 // Supabase query builders resolve to { error, ... }; plain awaits resolve to void.
 type WriteResult = { error: { message: string } | null } | void;
@@ -46,13 +66,13 @@ export function useWrite() {
         }
         const result = await fn({ supabase, userId: data.user.id });
         if (result && result.error) {
-          setError(result.error.message);
+          setError(humanise(result.error.message));
           return false;
         }
         startTransition(() => router.refresh());
         return true;
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+        setError(e instanceof Error ? humanise(e.message) : "Something went wrong. Try again.");
         return false;
       } finally {
         inFlight.current = false;

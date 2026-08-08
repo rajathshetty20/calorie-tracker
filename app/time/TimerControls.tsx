@@ -60,7 +60,7 @@ export default function TimerControls({
  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors disabled:opacity-50 ${
               running?.category === c
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-                : "border-rule text-zinc-700 hover:border-rule hover:bg-surface-2"
+                : "border-rule text-ink hover:border-rule hover:bg-surface-2"
             }`} >
             <Play className="h-3 w-3 fill-current" />
             {displayCategory(c)}
@@ -71,7 +71,7 @@ export default function TimerControls({
           aria-expanded={showOffset}
  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors ${
             offset !== 0
-              ? "border-zinc-900 text-ink"
+              ? "border-rule text-ink"
               : "border-dashed border-rule text-ink-3 hover:border-rule"
           }`} >
           <Timer className="h-3.5 w-3.5" />
@@ -93,7 +93,7 @@ export default function TimerControls({
  className={`rounded px-2 py-1 text-[0.75rem] tabular-nums ${
                   offset === o
                     ? "bg-ink text-ground"
-                    : "bg-surface-2 text-ink-2 hover:bg-zinc-200"
+                    : "bg-surface-2 text-ink-2 hover:bg-surface-2"
                 }`} >
                 {o === 0 ? "now" : o > 0 ? `+${o}` : o}
               </button>

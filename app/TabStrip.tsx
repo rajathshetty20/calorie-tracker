@@ -26,17 +26,12 @@ export default function TabStrip({
 
   return (
     <div className="relative min-w-0 flex-1">
-      <div
-        ref={ref}
-        className="scrollbar-none -mx-1 flex gap-1 overflow-x-auto scroll-smooth px-1 pb-1"
-      >
+      {/* Wraps rather than scrolls: 5 sheet tabs measured 399px inside a
+          342px window, so the last one — Time, the whole stopwatch feature —
+          rendered zero pixels wide with no affordance that it existed. */}
+      <div ref={ref} className="-mx-1 flex flex-wrap gap-1 px-1 pb-1">
         {children}
       </div>
-      {/* Marks that the strip continues past the edge. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-surface to-transparent"
-      />
     </div>
   );
 }

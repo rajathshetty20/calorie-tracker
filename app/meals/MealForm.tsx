@@ -14,14 +14,16 @@ export type MealPreset = {
 export default function MealForm({
   presets = [],
   today,
+  onSaved,
 }: {
   presets?: MealPreset[];
   // The local date, resolved server-side from settings.timezone. Letting the
   // database default eaten_on to current_date would file a 1am meal against
   // the previous UTC day.
   today: string;
+  onSaved?: () => void;
 }) {
-  const { run, busy, error } = useWrite();
+  const { run, busy, error, setError } = useWrite();
   const isDemo = useIsDemo();
   const [name, setName] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -47,6 +49,13 @@ export default function MealForm({
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Every other form guards its submit; this one let an entirely empty
+    // meal through and created a phantom 0 kcal entry.
+    const macros = [carbs, protein, fat].map((v) => Number(v) || 0);
+    if (macros.every((v) => v <= 0)) {
+      setError("Add at least one macro — carbs, protein or fat.");
+      return;
+    }
     const saved = await run(({ supabase, userId }) =>
       supabase.from("meals").insert({
         id: newId(),
@@ -59,6 +68,7 @@ export default function MealForm({
       }),
     );
     if (!saved) return;
+    onSaved?.();
     setName("");
     setCarbs("");
     setProtein("");

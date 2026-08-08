@@ -12,10 +12,12 @@ export default function WeightForm({
   today,
   todaysWeight,
   lastWeight,
+  onSaved,
 }: {
   today: string; // YYYY-MM-DD, from the server
   todaysWeight: number | null;
   lastWeight: number | null;
+  onSaved?: () => void;
 }) {
   const { run, busy, error } = useWrite();
   const isDemo = useIsDemo();
@@ -44,7 +46,10 @@ export default function WeightForm({
         { onConflict: "user_id,measured_on" },
       ),
     );
-    if (saved) setJustSaved(true);
+    if (saved) {
+      setJustSaved(true);
+      onSaved?.();
+    }
   }
 
   const replacing = todaysWeight !== null;

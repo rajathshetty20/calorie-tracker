@@ -116,7 +116,7 @@ export default function TimeEntryRow({
             <button type="button"
               onClick={save}
               disabled={busy || !valid}
- className="rounded-lg bg-ink px-3 py-1.5 text-[0.8125rem] font-medium text-ground hover:bg-zinc-800 disabled:opacity-50" >
+ className="rounded-lg bg-ink px-3 py-1.5 text-[0.8125rem] font-medium text-ground hover:bg-surface-2 disabled:opacity-50" >
               Save
             </button>
             <button type="button"

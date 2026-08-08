@@ -21,9 +21,11 @@ function summary(sets: ExerciseSet[]) {
 export default function ExerciseForm({
   presets = [],
   today,
+  onSaved,
 }: {
   presets?: ExercisePreset[];
-  today: string; // local date from settings.timezone, not the DB's current_date
+  today: string;
+  onSaved?: () => void; // local date from settings.timezone, not the DB's current_date
 }) {
   const { run, busy, error, setError } = useWrite();
   const isDemo = useIsDemo();
@@ -82,6 +84,7 @@ export default function ExerciseForm({
         .insert({ id: newId(), user_id: userId, performed_on: today, name: trimmed, sets }),
     );
     if (!saved) return;
+    onSaved?.();
     setName("");
     setRows([EMPTY_ROW]);
   }
@@ -152,7 +155,7 @@ export default function ExerciseForm({
 
       <button type="button"
         onClick={addRow}
- className="w-full rounded-lg border border-dashed border-rule px-3 py-2 text-[0.8125rem] text-ink-3 hover:border-rule hover:text-zinc-700 dark:hover:border-zinc-600" >
+ className="w-full rounded-lg border border-dashed border-rule px-3 py-2 text-[0.8125rem] text-ink-3 hover:border-rule hover:text-ink dark:hover:border-rule" >
         + Add set
       </button>
 

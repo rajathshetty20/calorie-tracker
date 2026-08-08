@@ -14,9 +14,11 @@ import { SignInToSave, useIsDemo } from "../DemoContext";
 export default function TimeForm({
   timeZone,
   categories = [],
+  onSaved,
 }: {
   timeZone: string;
   categories?: string[]; // recent categories, lowercase
+  onSaved?: () => void;
 }) {
   const { run, busy, error, setError } = useWrite();
   const isDemo = useIsDemo();
@@ -57,7 +59,10 @@ export default function TimeForm({
         ended_at: end.toISOString(),
       }),
     );
-    if (ok) setCategory("");
+    if (ok) {
+      setCategory("");
+      onSaved?.();
+    }
   }
 
   return (

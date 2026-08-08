@@ -19,7 +19,6 @@ import DateStrip from "./DateStrip";
 import DemoBanner from "./DemoBanner";
 import Hero from "./Hero";
 import Timeline from "./Timeline";
-import TimerBar from "./time/TimerBar";
 import WaterTracker from "./WaterTracker";
 import { Group } from "./ui";
 
@@ -171,13 +170,11 @@ export default async function HomePage({
 
   const dayTotals = totalsOnDay(timeEntries, date, timeZone, new Date());
   const timeTotal = Object.values(dayTotals).reduce((a, b) => a + b, 0);
-  const running = timeEntries.find((t) => t.ended_at === null) ?? null;
   const totalSets = exercises.reduce((a, ex) => a + ex.sets.length, 0);
   const entryCount = meals.length + exercises.length + timeEntries.length;
 
   return (
     <div className="space-y-6">
-      {running && <TimerBar timer={running} />}
       {isDemo && <DemoBanner />}
 
       <DateStrip date={date} today={today} basePath={isDemo ? "/demo" : "/"} />
