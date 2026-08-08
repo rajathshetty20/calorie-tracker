@@ -29,7 +29,7 @@ A self-hosted personal health dashboard: log **meals & macros, water, weight, ex
 ## How it's built
 
 - **Next.js 16 (App Router) + React 19 + TypeScript** — pages are Server Components that fetch everything for the day in one `Promise.all`; interactivity (forms, autocomplete, optimistic water taps) lives in small client components.
-- **Supabase** — Postgres with row-level security (every table is scoped to `auth.uid()`), magic-link email auth, and session refresh handled in Next.js middleware.
+- **Supabase** — Postgres with row-level security (every table is scoped to `auth.uid()`), magic-link email auth, and session refresh handled in a Next.js proxy.
 - **Tailwind CSS 4** for styling, **Recharts 3** for charts, **Vercel** for hosting.
 - Natural-key upserts (`user_id + date`) keep daily singletons like water and weight idempotent — re-logging replaces instead of duplicating.
 - **Time is stored as intervals, split on read.** A cross-midnight entry belongs to two days, so no per-day column or stored duration could stay honest; `splitByDay()` distributes it against local midnights, DST included. A running stopwatch is just a row with no end yet — nothing runs in the background and a timer costs no battery.
@@ -80,7 +80,7 @@ app/
   time/                  # Stopwatch: timer bar, start/switch controls, entry editor, manual backfill
   history/               # 90-day charts: calories, water, weight, exercise, time
   demo/                  # Public demo mirrors of Today + History (sample data)
-  settings/              # Target calories, macro split, bottle size
+  settings/              # Target calories, macro split, bottle size, timezone
   login/                 # Magic-link form + demo entry link
   auth/                  # OAuth callback + signout routes
 lib/
@@ -90,7 +90,7 @@ lib/
   demo-data.ts           # Seeded 90-day sample dataset for demo mode
   types.ts               # Row types, kcal math, 1RM estimate, mean/std
 supabase/schema.sql      # Tables + RLS policies
-middleware.ts            # Session refresh + redirect to /login
+proxy.ts                 # Session refresh + redirect to /login
 ```
 
 ## Design decisions
