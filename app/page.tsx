@@ -362,19 +362,25 @@ function MacroBar({
   color: string;
 }) {
   const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0;
+  const over = target > 0 && value > target;
+  // Label and value stack rather than sharing a row: at 375px each of the
+  // three columns is ~96px, which the icon + "Protein" + "150 / 150g" cannot
+  // fit side by side, and neither child can shrink.
   return (
-    <div>
-      <div className="flex justify-between text-xs text-zinc-500">
-        <span className="flex items-center gap-1.5">
-          <Icon className="h-3.5 w-3.5" />
-          {label}
-        </span>
-        <span className="tabular-nums">
-          {Math.round(value)} / {target}g
-        </span>
+    <div className="min-w-0">
+      <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
       </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+      <div className="mt-0.5 text-sm font-medium tabular-nums">
+        {Math.round(value)}
+        <span className="text-xs font-normal text-zinc-500"> / {target}g</span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+        <div
+          className={`h-full ${over ? "bg-rose-500" : color}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );

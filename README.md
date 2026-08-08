@@ -1,5 +1,8 @@
 # Daily Tracker
 
+**[▶ Try the live demo](https://calorie-tracker-green-eta.vercel.app/demo)** — 90 days of sample data, no sign-up.
+&nbsp;·&nbsp; [Live app](https://calorie-tracker-green-eta.vercel.app/) (magic-link sign-in)
+
 A self-hosted personal health dashboard: log **meals & macros, water, weight, exercise, and time** on one screen, and see 90 days of trends on another. Built with Next.js and Supabase, designed mobile-first so logging takes seconds.
 
 > Originally a calorie counter, it grew into a full daily tracker — the UI is organized as a glanceable dashboard (status first, forms collapsed until you need them).

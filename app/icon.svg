@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Quadrant mark: four tracked domains as dashboard tiles.
-       Keep in sync with app/Logo.tsx and app/apple-icon.tsx -->
+  <!-- Perimeter mark: a day as a closed circuit on a square path.
+       Geometry is defined in app/logoMark.ts — keep this file in sync. -->
   <rect width="128" height="128" rx="28" fill="#18181b"/>
-  <rect x="28" y="28" width="32" height="32" rx="10" fill="#34d399"/>
-  <rect x="68" y="28" width="32" height="32" rx="10" fill="#38bdf8"/>
-  <rect x="28" y="68" width="32" height="32" rx="10" fill="#fbbf24"/>
-  <rect x="68" y="68" width="32" height="32" rx="10" fill="#fb7185"/>
+  <path d="M48 26 H80 A22 22 0 0 1 102 48 V80 A22 22 0 0 1 80 102 H48 A22 22 0 0 1 26 80 V48 A22 22 0 0 1 48 26 Z"
+        fill="none" stroke="#3f3f46" stroke-width="12"/>
+  <path d="M64 26 H80 A22 22 0 0 1 102 48 V80 A22 22 0 0 1 80 102 H56"
+        fill="none" stroke="#34d399" stroke-width="12" stroke-linecap="round"/>
 </svg>
