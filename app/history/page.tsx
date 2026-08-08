@@ -7,6 +7,8 @@ import WaterChart, { type WaterDay } from "./WaterChart";
 import WeightChart from "./WeightChart";
 import ExerciseChart from "./ExerciseChart";
 import TimeChart, { type TimeDay } from "./TimeChart";
+import { RangeProvider } from "./RangeContext";
+import { parseRange } from "./range";
 
 const LOOKBACK_DAYS = 90;
 const WEEK_DAYS = 7;
@@ -91,7 +93,14 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
   };
 }
 
-export default async function HistoryPage() {
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // ?range= is the initial value only; the toggle updates it client-side with
+  // replaceState, since all 90 days are already loaded.
+  const range = parseRange((await searchParams)?.range);
   const start = isoDaysAgo(LOOKBACK_DAYS - 1);
   const end = isoDaysAgo(0);
   const { isDemo, meals, water, weights, settings: s, exercises, timeEntries } =
@@ -181,33 +190,39 @@ export default async function HistoryPage() {
         <p className="text-sm text-zinc-500">Calories, water, weight, exercise, and time.</p>
       </header>
 
-      <HistoryChart
-        rows={rows}
-        target={target}
-        avg7={kcalStats.n ? `${Math.round(kcalStats.mean)} kcal` : "—"}
-        std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"}
-      />
+      {/* One range for every chart below: independent toggles made
+          cross-domain comparison quietly wrong. */}
+      <RangeProvider initial={range}>
+        <div className="space-y-6">
+          <HistoryChart
+            rows={rows}
+            target={target}
+            avg7={kcalStats.n ? `${Math.round(kcalStats.mean)} kcal` : "—"}
+            std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"}
+          />
 
-      <WaterChart
-        rows={waterRows}
-        avg7={waterStats.n ? `${waterStats.mean.toFixed(1)} L` : "—"}
-        std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"}
-      />
+          <WaterChart
+            rows={waterRows}
+            avg7={waterStats.n ? `${waterStats.mean.toFixed(1)} L` : "—"}
+            std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"}
+          />
 
-      <WeightChart
-        data={weightSeries}
-        today={end}
-        avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
-        std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
-      />
+          <WeightChart
+            data={weightSeries}
+            today={end}
+            avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
+            std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
+          />
 
-      <ExerciseChart rows={exercises} today={end} />
+          <ExerciseChart rows={exercises} today={end} />
 
-      <TimeChart
-        rows={timeRows}
-        avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
-        std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"}
-      />
+          <TimeChart
+            rows={timeRows}
+            avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
+            std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"}
+          />
+        </div>
+      </RangeProvider>
     </div>
   );
 }

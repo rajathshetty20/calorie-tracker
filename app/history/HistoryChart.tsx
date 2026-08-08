@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -11,17 +11,25 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { format, parseISO } from "date-fns";
 import {
   AXIS_PROPS,
   CHART_BODY,
   CHART_CURSOR,
   ChartHeader,
+  fmtSpan,
   fmtTick,
   TooltipCard,
   xTickProps,
-  type Range,
 } from "./chartParts";
+import { useRange } from "./RangeContext";
+import {
+  aggregationLabel,
+  bucketDays,
+  bucketSizeFor,
+  meanOverLogged,
+  PX_PER_BAR,
+  useMaxPoints,
+} from "./series";
 
 export type DayRow = {
   date: string; // YYYY-MM-DD
@@ -34,6 +42,11 @@ export type DayRow = {
   total_kcal: number;
 };
 
+// A plotted bar: one day, or the daily average across a bucket of days.
+type Plot = DayRow & { startDate: string; endDate: string; size: number };
+
+const logged = (d: DayRow) => d.total_kcal > 0;
+
 export default function HistoryChart({
   rows,
   target,
@@ -45,15 +58,40 @@ export default function HistoryChart({
   avg7: string;
   std7: string;
 }) {
-  const [range, setRange] = useState<Range>(30);
+  const { range } = useRange();
+  const { ref, maxPoints } = useMaxPoints(PX_PER_BAR);
 
-  const data = useMemo(() => rows.slice(-range), [rows, range]);
+  const windowed = useMemo(() => rows.slice(-range), [rows, range]);
+  const bucketSize = bucketSizeFor(windowed.length, maxPoints);
+
+  const data = useMemo<Plot[]>(
+    () =>
+      bucketDays(windowed, bucketSize).map((b) => ({
+        date: b.date,
+        startDate: b.startDate,
+        endDate: b.endDate,
+        size: b.size,
+        carbs_g: meanOverLogged(b.days, (d) => d.carbs_g, logged),
+        protein_g: meanOverLogged(b.days, (d) => d.protein_g, logged),
+        fat_g: meanOverLogged(b.days, (d) => d.fat_g, logged),
+        carbs_kcal: meanOverLogged(b.days, (d) => d.carbs_kcal, logged),
+        protein_kcal: meanOverLogged(b.days, (d) => d.protein_kcal, logged),
+        fat_kcal: meanOverLogged(b.days, (d) => d.fat_kcal, logged),
+        total_kcal: meanOverLogged(b.days, (d) => d.total_kcal, logged),
+      })),
+    [windowed, bucketSize],
+  );
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <ChartHeader title="Calories" avg={avg7} std={std7} range={range} onChange={setRange} />
+      <ChartHeader
+        title="Calories"
+        avg={avg7}
+        std={std7}
+        note={aggregationLabel(bucketSize, 1)}
+      />
 
-      <div className={CHART_BODY}>
+      <div className={CHART_BODY} ref={ref}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
@@ -95,22 +133,23 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-type TooltipPayloadItem = { payload?: DayRow };
+type TooltipPayloadItem = { payload?: Plot };
 function MacroTooltip({
   active,
   payload,
-  label,
 }: {
   active?: boolean;
   payload?: TooltipPayloadItem[];
-  label?: string;
 }) {
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0].payload;
   if (!row) return null;
-  const dateLabel = label && typeof label === "string" ? format(parseISO(label), "PPP") : "";
+  const bucketed = row.size > 1;
   return (
-    <TooltipCard title={dateLabel}>
+    <TooltipCard
+      title={fmtSpan(row.startDate, row.endDate)}
+      subtitle={bucketed ? `Average per logged day · ${row.size} days` : null}
+    >
       <div className="tabular-nums">Total: {Math.round(row.total_kcal)} kcal</div>
       <div className="mt-1 grid grid-cols-2 gap-x-3 tabular-nums text-zinc-500">
         <span>Carbs</span><span>{Math.round(row.carbs_g)}g · {Math.round(row.carbs_kcal)} kcal</span>

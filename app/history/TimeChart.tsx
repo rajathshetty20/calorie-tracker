@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -16,11 +16,19 @@ import {
   CHART_BODY,
   CHART_CURSOR,
   ChartHeader,
-  fmtFullDate,
+  fmtSpan,
   fmtTick,
   xTickProps,
-  type Range,
 } from "./chartParts";
+import { useRange } from "./RangeContext";
+import {
+  aggregationLabel,
+  bucketDays,
+  bucketSizeFor,
+  meanOverLogged,
+  PX_PER_BAR,
+  useMaxPoints,
+} from "./series";
 
 export type TimeDay = { date: string; totals: Record<string, number> };
 
@@ -29,7 +37,10 @@ const CAT_COLORS = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `var(--cat-${i})`);
 const OTHER = "other";
 const OTHER_COLOR = "var(--cat-other)";
 
-type ChartRow = { date: string } & Record<string, number | string>;
+type ChartRow = { date: string; startDate: string; endDate: string; size: number } & Record<
+  string,
+  number | string
+>;
 
 export default function TimeChart({
   rows,
@@ -40,7 +51,8 @@ export default function TimeChart({
   avg7: string;
   std7: string;
 }) {
-  const [range, setRange] = useState<Range>(30);
+  const { range } = useRange();
+  const { ref, maxPoints } = useMaxPoints(PX_PER_BAR);
 
   // Colors are assigned from total minutes over the FULL lookback so the
   // range toggle never repaints a category.
@@ -60,17 +72,35 @@ export default function TimeChart({
     };
   }, [rows]);
 
+  const windowed = useMemo(() => rows.slice(-range), [rows, range]);
+  const bucketSize = bucketSizeFor(windowed.length, maxPoints);
+
+  // A day counts toward the average if anything at all was tracked on it —
+  // otherwise an untracked weekend would drag every category down.
+  const tracked = (d: TimeDay) => Object.values(d.totals).some((m) => m > 0);
+
   const data = useMemo<ChartRow[]>(
     () =>
-      rows.slice(-range).map((r) => {
-        const row: ChartRow = { date: r.date };
-        for (const cat of named) row[`c_${cat}`] = r.totals[cat] ?? 0;
+      bucketDays(windowed, bucketSize).map((b) => {
+        const row: ChartRow = {
+          date: b.date,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          size: b.size,
+        };
+        for (const cat of named) {
+          row[`c_${cat}`] = meanOverLogged(b.days, (d) => d.totals[cat] ?? 0, tracked);
+        }
         if (folded.length > 0) {
-          row[`c_${OTHER}`] = folded.reduce((a, cat) => a + (r.totals[cat] ?? 0), 0);
+          row[`c_${OTHER}`] = meanOverLogged(
+            b.days,
+            (d) => folded.reduce((a, cat) => a + (d.totals[cat] ?? 0), 0),
+            tracked,
+          );
         }
         return row;
       }),
-    [rows, range, named, folded],
+    [windowed, bucketSize, named, folded],
   );
 
   const series = [
@@ -80,7 +110,12 @@ export default function TimeChart({
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <ChartHeader title="Time" avg={avg7} std={std7} range={range} onChange={setRange} />
+      <ChartHeader
+        title="Time"
+        avg={avg7}
+        std={std7}
+        note={aggregationLabel(bucketSize, 1)}
+      />
 
       {named.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
@@ -90,7 +125,7 @@ export default function TimeChart({
         </div>
       ) : (
         <>
-          <div className={CHART_BODY}>
+          <div className={CHART_BODY} ref={ref}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
@@ -143,12 +178,10 @@ type TooltipPayloadItem = { payload?: ChartRow };
 function TimeTooltip({
   active,
   payload,
-  label,
   series,
 }: {
   active?: boolean;
   payload?: TooltipPayloadItem[];
-  label?: string;
   series: Series[];
 }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -161,7 +194,10 @@ function TimeTooltip({
   const total = present.reduce((a, s) => a + s.minutes, 0);
   return (
     <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-      <div className="mb-1 font-medium">{fmtFullDate(label)}</div>
+      <div className="font-medium">{fmtSpan(row.startDate, row.endDate)}</div>
+      {row.size > 1 && (
+        <div className="mb-1 text-zinc-500">Average per tracked day · {row.size} days</div>
+      )}
       <div className="tabular-nums">Total: {fmtDuration(total)}</div>
       <div className="mt-1 space-y-0.5">
         {present.map((s) => (

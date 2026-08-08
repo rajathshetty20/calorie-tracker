@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import {
   Area,
-  AreaChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,6 +20,7 @@ import {
   type ExerciseSet,
 } from "@/lib/types";
 import {
+  AggregationChip,
   AXIS_PROPS,
   CHART_BODY,
   fmtFullDate,
@@ -26,8 +28,16 @@ import {
   RangeToggle,
   TooltipCard,
   xTickProps,
-  type Range,
 } from "./chartParts";
+import { useRange } from "./RangeContext";
+import {
+  aggregationLabel,
+  DOT_LIMIT,
+  PX_PER_DOT,
+  rollingMean,
+  smoothWindowFor,
+  useMaxPoints,
+} from "./series";
 
 type Metric = "top" | "e1rm" | "volume";
 const METRICS: { key: Metric; label: string }[] = [
@@ -43,6 +53,7 @@ const METRIC_VALUE: Record<Metric, (sets: ExerciseSet[]) => number> = {
 };
 
 type DayPoint = { date: string; value: number; sets: ExerciseSet[] };
+type Plot = DayPoint & { smooth: number };
 
 export default function ExerciseChart({
   rows,
@@ -66,11 +77,12 @@ export default function ExerciseChart({
   }, [rows]);
 
   const [name, setName] = useState<string | null>(null);
-  const [range, setRange] = useState<Range>(30);
   const [metric, setMetric] = useState<Metric>("top");
+  const { range } = useRange();
+  const { ref, maxPoints } = useMaxPoints(PX_PER_DOT);
   const selected = name ?? names[0] ?? "";
 
-  const data = useMemo<DayPoint[]>(() => {
+  const sessions = useMemo<DayPoint[]>(() => {
     const cutoff = format(subDays(parseISO(today), range - 1), "yyyy-MM-dd");
     const key = selected.trim().toLowerCase();
     // Merge multiple entries of the same exercise on one day.
@@ -86,7 +98,17 @@ export default function ExerciseChart({
     }));
   }, [rows, selected, range, metric, today]);
 
-  const values = data.map((d) => d.value);
+  // Sessions are sparse — a dozen points across 90 days is normal — so this
+  // usually stays at 1 and the chart plots exactly what was lifted.
+  const smoothWindow = smoothWindowFor(sessions.length, maxPoints);
+  const smoothing = smoothWindow > 1;
+
+  const data = useMemo<Plot[]>(() => {
+    const means = rollingMean(sessions.map((d) => d.value), smoothWindow);
+    return sessions.map((d, i) => ({ ...d, smooth: Math.round(means[i] * 10) / 10 }));
+  }, [sessions, smoothWindow]);
+
+  const values = data.flatMap((d) => (smoothing ? [d.value, d.smooth] : [d.value]));
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;
   const pad = Math.max(1, (max - min) * 0.2);
@@ -95,8 +117,11 @@ export default function ExerciseChart({
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h2 className="text-sm font-medium text-zinc-500">Exercise</h2>
+        {aggregationLabel(1, smoothWindow, "session") && (
+          <AggregationChip label={aggregationLabel(1, smoothWindow, "session")!} />
+        )}
         <div className="ml-auto">
-          <RangeToggle value={range} onChange={setRange} />
+          <RangeToggle />
         </div>
         {names.length > 0 && (
           <div className="order-last flex w-full flex-wrap items-center gap-2">
@@ -144,9 +169,9 @@ export default function ExerciseChart({
           </p>
         </div>
       ) : (
-        <div className={CHART_BODY}>
+        <div className={CHART_BODY} ref={ref}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="exerciseGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -166,17 +191,30 @@ export default function ExerciseChart({
                 width={38}
                 tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
               />
-              <Tooltip content={<ExerciseTooltip metric={metric} />} />
+              <Tooltip content={<ExerciseTooltip metric={metric} smoothing={smoothing} />} />
               <Area
                 type="monotone"
-                dataKey="value"
+                dataKey={smoothing ? "smooth" : "value"}
                 stroke="#8b5cf6"
                 strokeWidth={2.5}
                 fill="url(#exerciseGradient)"
-                dot={{ r: 3, fill: "#8b5cf6" }}
+                dot={data.length <= DOT_LIMIT ? { r: 3, fill: "#8b5cf6" } : false}
                 activeDot={{ r: 5, fill: "#8b5cf6", stroke: "var(--chart-surface)", strokeWidth: 2 }}
+                isAnimationActive={false}
               />
-            </AreaChart>
+              {smoothing && (
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#8b5cf6"
+                  strokeOpacity={0.28}
+                  strokeWidth={1}
+                  dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
+                />
+              )}
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -190,17 +228,19 @@ const METRIC_LABEL: Record<Metric, string> = {
   volume: "Volume",
 };
 
-type TooltipPayloadItem = { payload?: DayPoint };
+type TooltipPayloadItem = { payload?: Plot };
 function ExerciseTooltip({
   active,
   payload,
   label,
   metric,
+  smoothing,
 }: {
   active?: boolean;
   payload?: TooltipPayloadItem[];
   label?: string;
   metric: Metric;
+  smoothing: boolean;
 }) {
   if (!active || !payload || payload.length === 0) return null;
   const row = payload[0].payload;
@@ -211,6 +251,12 @@ function ExerciseTooltip({
         {METRIC_LABEL[metric]}: {row.value.toLocaleString()}
         {metric === "volume" ? "" : " kg"}
       </div>
+      {smoothing && (
+        <div className="tabular-nums text-zinc-500">
+          Trend {row.smooth.toLocaleString()}
+          {metric === "volume" ? "" : " kg"}
+        </div>
+      )}
       <div className="mt-1 tabular-nums text-zinc-500">
         {row.sets.map((s, i) => (
           <div key={i}>

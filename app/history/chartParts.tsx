@@ -2,14 +2,16 @@
 
 import { format, parseISO } from "date-fns";
 import WeekStats from "./WeekStats";
+import { useRange } from "./RangeContext";
+import { RANGES, type Range } from "./range";
 
-// Shared chrome so the three history charts read as one consistent set.
+// Shared chrome so the history charts read as one consistent set.
 
-export type Range = 7 | 30 | 90;
-export const RANGES: readonly Range[] = [7, 30, 90] as const;
+export type { Range };
+export { RANGES };
 
 // Tailwind height shared by every chart body — shorter on phones so all
-// three charts scan without endless scrolling.
+// the charts scan without endless scrolling.
 export const CHART_BODY = "h-56 w-full sm:h-72";
 
 // Theme-aware axis styling shared by every axis (colors come from the
@@ -28,44 +30,49 @@ export function ChartHeader({
   title,
   avg,
   std,
-  range,
-  onChange,
+  note,
 }: {
   title: string;
   avg: string;
   std: string;
-  range: Range;
-  onChange: (r: Range) => void;
+  /** Aggregation label, shown only when the chart isn't plotting raw days. */
+  note?: string | null;
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
       <h2 className="text-sm font-medium text-zinc-500">{title}</h2>
+      {note && <AggregationChip label={note} />}
       <div className="order-last w-full sm:order-none sm:w-auto">
         <WeekStats avg={avg} std={std} />
       </div>
       <div className="ml-auto">
-        <RangeToggle value={range} onChange={onChange} />
+        <RangeToggle />
       </div>
     </div>
   );
 }
 
-export function RangeToggle({
-  value,
-  onChange,
-}: {
-  value: Range;
-  onChange: (r: Range) => void;
-}) {
+// Never let an aggregated chart pass for a raw one.
+export function AggregationChip({ label }: { label: string }) {
+  return (
+    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+      {label}
+    </span>
+  );
+}
+
+export function RangeToggle() {
+  const { range, setRange } = useRange();
   return (
     <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 text-xs dark:border-zinc-800">
       {RANGES.map((r) => (
         <button
           key={r}
           type="button"
-          onClick={() => onChange(r)}
+          onClick={() => setRange(r)}
+          aria-pressed={range === r}
           className={`px-2.5 py-1.5 ${
-            value === r
+            range === r
               ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
               : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
           }`}
@@ -94,17 +101,31 @@ export function fmtFullDate(v: unknown) {
   return typeof v === "string" ? format(parseISO(v), "PPP") : String(v ?? "");
 }
 
-// Consistent tooltip surface for all three charts.
+// Bucketed points cover a span, so the tooltip has to name the span rather
+// than pretend the value belongs to its end date.
+export function fmtSpan(startDate: string, endDate: string) {
+  if (startDate === endDate) return fmtFullDate(endDate);
+  const a = parseISO(startDate);
+  const b = parseISO(endDate);
+  const sameMonth = a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+  return `${format(a, "MMM d")} – ${format(b, sameMonth ? "d, yyyy" : "MMM d, yyyy")}`;
+}
+
+// Consistent tooltip surface for all the charts.
 export function TooltipCard({
   title,
+  subtitle,
   children,
 }: {
   title: string;
+  subtitle?: string | null;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-      <div className="mb-1 font-medium">{title}</div>
+      <div className="font-medium">{title}</div>
+      {subtitle && <div className="mb-1 text-zinc-500">{subtitle}</div>}
+      {!subtitle && <div className="mb-1" />}
       {children}
     </div>
   );
