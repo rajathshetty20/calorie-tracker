@@ -170,7 +170,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
           onChange={(e) => setBottleMl(e.target.value)}
           className="mt-1 block w-full max-w-[10rem] rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink"/>
         <span className="mt-1 block text-[0.75rem] text-ink-3">
-          One tap on the Today page logs this much water.
+          Each tap in the water section of + adds this much.
         </span>
       </label>
 
