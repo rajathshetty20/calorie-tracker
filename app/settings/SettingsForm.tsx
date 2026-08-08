@@ -37,6 +37,33 @@ function isValidZone(zone: string) {
   }
 }
 
+/**
+ * Whether two zone names describe the same clock.
+ *
+ * Browsers still report deprecated aliases — Chrome says `Asia/Calcutta` for
+ * what the IANA database now calls `Asia/Kolkata`. Comparing the strings made
+ * the form offer to "fix" a timezone that was already correct, and taking the
+ * offer would have stored the legacy name. Compare behaviour instead, at two
+ * dates so zones that differ only in DST rules aren't treated as equal.
+ */
+function sameZone(a: string, b: string) {
+  if (a === b) return true;
+  try {
+    const fmt = (z: string, iso: string) =>
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: z,
+        dateStyle: "short",
+        timeStyle: "long",
+      }).format(new Date(iso));
+    return (
+      fmt(a, "2026-01-15T12:00:00Z") === fmt(b, "2026-01-15T12:00:00Z") &&
+      fmt(a, "2026-07-15T12:00:00Z") === fmt(b, "2026-07-15T12:00:00Z")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function SettingsForm({ initial }: { initial: Initial }) {
   // The device's zone is client-only knowledge. useSyncExternalStore lets the
   // server render an empty snapshot and the client fill it in, without an
@@ -50,6 +77,14 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
   const [bottleMl, setBottleMl] = useState(String(initial.bottle_ml));
   const [timezone, setTimezone] = useState(initial.timezone);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const dirty =
+    target !== String(initial.target_calories) ||
+    carbs !== String(initial.carbs_pct) ||
+    protein !== String(initial.protein_pct) ||
+    fat !== String(initial.fat_pct) ||
+    bottleMl !== String(initial.bottle_ml) ||
+    timezone !== initial.timezone;
 
   const c = Number(carbs) || 0;
   const p = Number(protein) || 0;
@@ -101,7 +136,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         <input type="number" min="1"
           value={target}
           onChange={(e) => setTarget(e.target.value)}
- className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+          className="mt-1 block w-full max-w-[10rem] rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink"/>
       </label>
 
       <div className="grid grid-cols-3 gap-2">
@@ -130,7 +165,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
           inputMode="numeric" step="50" min="1"
           value={bottleMl}
           onChange={(e) => setBottleMl(e.target.value)}
- className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+          className="mt-1 block w-full max-w-[10rem] rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink"/>
         <span className="mt-1 block text-[0.75rem] text-ink-3">
           One tap on the Today page logs this much water.
         </span>
@@ -142,7 +177,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
           value={timezone}
           onChange={(e) => setTimezone(e.target.value.trim())} list="tz-suggestions"
           spellCheck={false}
- className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
+ className="mt-1 block w-full max-w-[18rem] rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
         <datalist id="tz-suggestions">
           {COMMON_ZONES.map((z) => (
             <option key={z} value={z} />
@@ -151,7 +186,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         <span className="mt-1 block text-[0.75rem] text-ink-3">
           Decides where your day starts and ends — including how an entry that
           crosses midnight is divided between two days.
-          {detected && detected !== timezone && (
+          {detected && !sameZone(detected, timezone) && (
             <>
               {" "}
               <button type="button"
@@ -164,11 +199,16 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         </span>
       </label>
 
-      <button type="submit"
-        disabled={busy}
- className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
-        {busy ? "Saving..." : "Save"}
-      </button>
+      <div className="flex items-center justify-end gap-3 border-t border-rule pt-4">
+        {dirty && !busy && <span className="text-[0.75rem] text-ink-3">Unsaved changes</span>}
+        <button
+          type="submit"
+          disabled={busy || !dirty}
+          className="w-full rounded-lg bg-ink px-4 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40 sm:w-auto"
+        >
+          {busy ? "Saving…" : dirty ? "Save changes" : "Saved"}
+        </button>
+      </div>
     </form>
   );
 }
