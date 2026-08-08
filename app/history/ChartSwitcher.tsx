@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { RangeToggle } from "./chartParts";
+import TabStrip from "../TabStrip";
 
 // One chart at a time. Five stacked charts meant the range control repeated
 // five times and any single comparison required scrolling past four others.
@@ -21,7 +22,7 @@ export default function ChartSwitcher({
         <RangeToggle />
       </div>
       <div className="flex items-center gap-2">
-        <div className="-mx-1 flex flex-1 gap-1 overflow-x-auto px-1 pb-1">
+        <TabStrip activeKey={current.key}>
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -42,7 +43,7 @@ export default function ChartSwitcher({
               </span>
             </button>
           ))}
-        </div>
+        </TabStrip>
       </div>
       {current.node}
     </div>

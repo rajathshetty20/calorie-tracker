@@ -115,9 +115,12 @@ export type WeightPoint = { date: string; kg: number };
 
 // Change between the most recent weigh-in and the nearest one at least a week
 // older. Null when there isn't enough history to say anything honest.
-export function weeklyDelta(points: WeightPoint[]): number | null {
+export function weeklyDelta(points: WeightPoint[], asOf?: string): number | null {
   if (points.length < 2) return null;
-  const sorted = [...points].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...points]
+    .filter((p) => !asOf || p.date <= asOf)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (sorted.length < 2) return null;
   const latest = sorted[0];
   const cutoff = new Date(`${latest.date}T12:00:00`);
   cutoff.setDate(cutoff.getDate() - 7);

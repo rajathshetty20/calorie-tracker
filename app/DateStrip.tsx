@@ -30,7 +30,7 @@ export default function DateStrip({
       <Link
         href={`${basePath}?d=${prev}`}
         aria-label="Previous day"
-        className="justify-self-start rounded-lg p-2 text-ink-3 hover:bg-surface-2 hover:text-ink"
+        className="-m-1 flex h-11 w-11 items-center justify-center justify-self-start rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
       >
         <ChevronLeft className="h-5 w-5" />
       </Link>
@@ -39,19 +39,27 @@ export default function DateStrip({
         <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
           {isToday ? "Today" : label}
         </h1>
-        <span className="tnum text-[0.8125rem] text-ink-3">{isToday ? label : date}</span>
+        <span className="tnum text-[0.8125rem] text-ink-3">
+          {isToday
+            ? label
+            : new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+        </span>
       </div>
 
       <div className="flex items-center justify-end gap-2 justify-self-end">
         {isToday ? (
-          <span className="p-2 opacity-0" aria-hidden="true">
+          <span className="h-11 w-11 opacity-0" aria-hidden="true">
             <ChevronRight className="h-5 w-5" />
           </span>
         ) : (
           <Link
             href={`${basePath}?d=${next}`}
             aria-label="Next day"
-            className="rounded-lg p-2 text-ink-3 hover:bg-surface-2 hover:text-ink"
+            className="-m-1 flex h-11 w-11 items-center justify-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <ChevronRight className="h-5 w-5" />
           </Link>

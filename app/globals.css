@@ -122,6 +122,42 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Recharts marks its surface focusable; a tap then painted the browser's
+   default focus ring round the entire chart. Keyboard focus still shows. */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
+.recharts-wrapper:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Over target is signalled by hatching as well as colour: crimson alone
+   collided with the fat macro's own crimson sitting right beside it. */
+.over-fill {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+/* iOS Safari zooms the whole page when a focused field is smaller than 16px,
+   and does not zoom back out afterwards. Every field here was 13px, so tapping
+   any input in the add sheet zoomed the app. Unlayered, so it beats the
+   Tailwind size utilities, which live in @layer utilities. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 /* Digits line up in every column without needing to be asked. */
 .tnum,
 table,

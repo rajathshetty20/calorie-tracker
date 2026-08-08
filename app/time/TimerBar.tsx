@@ -18,7 +18,7 @@ export type RunningTimer = { id: string; category: string; started_at: string };
  * counting up. Same row, same timestamp, no scheduling anywhere.
  */
 export default function TimerBar({ timer }: { timer: RunningTimer }) {
-  const { run, busy, error } = useWrite();
+  const { run, busy, error, setError } = useWrite();
   const isDemo = useIsDemo();
   const now = useTicker(true);
 
@@ -27,8 +27,12 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
   const pending = elapsed < 0;
 
   async function stop() {
-    // In demo mode useWrite surfaces the "saving is disabled" notice, which is
-    // more useful than a button that silently does nothing.
+    // A disabled button with a title attribute is invisible on touch, so the
+    // demo read as "Stop is broken". Say it in the bar instead.
+    if (isDemo) {
+      setError("Sign in to stop timers — this one is sample data.");
+      return;
+    }
     await run(({ supabase }) =>
       supabase
         .from("time_entries")
@@ -61,8 +65,7 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
 
         <button type="button"
           onClick={stop}
-          disabled={busy || isDemo}
-          title={isDemo ? "Sign in to stop this timer" : undefined}
+          disabled={busy}
  className="flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[0.8125rem] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" >
           <Square className="h-3 w-3 fill-current" />
           Stop

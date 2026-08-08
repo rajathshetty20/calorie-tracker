@@ -10,6 +10,7 @@ import WeightForm from "./WeightForm";
 import WaterTracker from "./WaterTracker";
 import { loadQuickAddData, type QuickAddData } from "./quickAddData";
 import { DOMAIN_COLOR, type Domain } from "./ui";
+import TabStrip from "./TabStrip";
 
 const TABS: { key: Domain; label: string }[] = [
   { key: "food", label: "Meal" },
@@ -80,11 +81,11 @@ export default function QuickAdd({
  className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
       <div
         ref={panelRef} role="dialog" aria-modal="true" aria-label="Add an entry"
- className="relative max-h-[88vh] overflow-y-auto rounded-t-2xl bg-surface pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_32px_rgba(0,0,0,0.18)] motion-safe:animate-[sheet-in_150ms_ease-out]" >
+ className="relative mx-auto max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-surface pb-[calc(1rem+env(safe-area-inset-bottom))] sm:mb-6 sm:rounded-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.18)] motion-safe:animate-[sheet-in_150ms_ease-out]" >
         <style>{`@keyframes sheet-in{from{transform:translateY(12px);opacity:.6}to{transform:none;opacity:1}}`}</style>
 
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-rule bg-surface px-4 pb-2 pt-3">
-          <div className="-mx-1 flex flex-1 gap-1 overflow-x-auto px-1">
+          <TabStrip activeKey={tab}>
             {TABS.map((t) => (
               <button
                 key={t.key} type="button"
@@ -103,7 +104,7 @@ export default function QuickAdd({
                 </span>
               </button>
             ))}
-          </div>
+          </TabStrip>
           <button type="button"
             onClick={onClose} aria-label="Close"
  className="shrink-0 rounded-lg p-1.5 text-ink-3 hover:bg-surface-2 hover:text-ink" >

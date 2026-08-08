@@ -71,7 +71,7 @@ export function RangeToggle() {
  className={`min-h-[38px] px-3 py-2 ${
             range === r
               ? "bg-ink text-ground"
-              : "bg-white text-ink-2 hover:bg-surface-2"
+              : "bg-surface text-ink-2 hover:bg-surface-2"
           }`} >
           {r}d
         </button>

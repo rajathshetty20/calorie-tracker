@@ -65,7 +65,7 @@ export default function WeightChart({
   const values = data.flatMap((d) => (smoothing ? [d.kg, d.smooth] : [d.kg]));
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;
-  const pad = Math.max(1, (max - min) * 0.2);
+  const pad = Math.max(0.3, (max - min) * 0.25);
 
   return (
     <section className="border-t border-rule pt-3">

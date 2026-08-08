@@ -98,9 +98,15 @@ export default function HistoryChart({
               tickFormatter={(v: string) => fmtTick(v, range)}
               {...AXIS_PROPS}
               {...xTickProps(range)} />
-            <YAxis {...AXIS_PROPS} width={38} />
+            {/* The domain must reach the target, or the reference line below is
+                  clipped out of the plot while the legend still claims it. */}
+              <YAxis
+                {...AXIS_PROPS}
+                width={38}
+                domain={[0, (dataMax: number) => Math.ceil(Math.max(dataMax, target) * 1.08)]}
+              />
             <Tooltip cursor={CHART_CURSOR} content={<MacroTooltip />} />
-            <ReferenceLine y={target} stroke="#71717a" strokeDasharray="4 4" />
+            <ReferenceLine y={target} stroke="var(--ink-3)" strokeDasharray="4 4" ifOverflow="visible" />
             <Bar dataKey="carbs_kcal" stackId="kcal" fill="#f59e0b" name="Carbs" />
             <Bar dataKey="protein_kcal" stackId="kcal" fill="#0ea5e9" name="Protein" />
             <Bar dataKey="fat_kcal" stackId="kcal" fill="#f43f5e" name="Fat" radius={[4, 4, 0, 0]} />

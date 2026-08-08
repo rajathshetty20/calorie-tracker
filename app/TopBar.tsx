@@ -10,7 +10,12 @@ export default function TopBar({ signedIn }: { signedIn: boolean }) {
   const pathname = usePathname();
   if (pathname.startsWith("/login")) return null;
   return (
-    <header className="border-b border-rule bg-surface">
+    <header
+      className="border-b border-rule bg-surface"
+      // Installed to the home screen the app draws under the status bar and
+      // Dynamic Island; without this the header hides behind them.
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
       <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
         <Logo className="h-6 w-6 shrink-0" />
         {/* Tabs move to the bottom bar on phones; the thumb lives there. */}

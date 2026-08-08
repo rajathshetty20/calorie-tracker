@@ -162,8 +162,12 @@ export default async function HomePage({
     : { carbs: 200, protein: 150, fat: 67 };
 
   const dayWeight = weights.find((w) => w.date === date)?.kg ?? null;
-  const lastWeight = weights[0]?.kg ?? null;
-  const trend = weeklyDelta(weights);
+  // Anchored to the day being viewed — otherwise every past day showed the
+  // same delta, computed from today's newest weigh-in.
+  const trend = weeklyDelta(weights, date);
+  // The most recent weigh-in on or before this day, for context when the day
+  // itself has none.
+  const priorWeight = weights.find((w) => w.date <= date)?.kg ?? null;
 
   const dayTotals = totalsOnDay(timeEntries, date, timeZone, new Date());
   const timeTotal = Object.values(dayTotals).reduce((a, b) => a + b, 0);
@@ -203,19 +207,15 @@ export default async function HomePage({
           </Stat>
           <Stat label="Weight" domain="weight">
             <StatValue
-              value={
-                dayWeight !== null
-                  ? `${dayWeight} kg`
-                  : lastWeight !== null
-                    ? `${lastWeight} kg`
-                    : "—"
-              }
+              value={dayWeight !== null ? `${dayWeight} kg` : "—"}
               sub={
-                dayWeight === null
-                  ? "not logged"
-                  : trend !== null
-                    ? `${trend > 0 ? "+" : trend < 0 ? "−" : "±"}${Math.abs(trend).toFixed(1)} this week`
+                dayWeight !== null
+                  ? trend !== null
+                    ? `${trend > 0 ? "+" : trend < 0 ? "−" : "±"}${Math.abs(trend).toFixed(1)} kg this week`
                     : "logged"
+                  : priorWeight !== null
+                    ? `last: ${priorWeight} kg`
+                    : "not logged"
               } />
           </Stat>
           <Stat label="Exercise" domain="exercise">
