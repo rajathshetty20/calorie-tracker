@@ -12,7 +12,7 @@ const DEMO_USER = "demo";
 export const DEMO_TIME_ZONE = "Asia/Kolkata";
 
 // Local wall clock on a demo day -> ISO instant.
-function at(dateISO: string, hhmm: string) {
+function atZone(dateISO: string, hhmm: string) {
   return instantFromLocal(dateISO, hhmm, DEMO_TIME_ZONE).toISOString();
 }
 
@@ -94,7 +94,7 @@ export function demoData() {
       const within = mins - dayOffset * 1440;
       const hh = String(Math.floor(within / 60)).padStart(2, "0");
       const mm = String(within % 60).padStart(2, "0");
-      return at(addDaysISO(dateISO, dayOffset), `${hh}:${mm}`);
+      return atZone(addDaysISO(dateISO, dayOffset), `${hh}:${mm}`);
     };
     timeEntries.push({
       id: `demo-time-${id}`,
@@ -112,7 +112,11 @@ export function demoData() {
     const date = isoDaysAgo(daysAgo);
     const isToday = daysAgo === 0;
     const weekday = new Date(`${date}T12:00:00`).getDay();
-    const at = (time: string) => `${date}T${time}:00`;
+    // A real instant, not `${date}T${time}:00` — that string carries no
+    // offset, so new Date() reads it in whatever zone the server runs in.
+    // Locally that looked right; on Vercel (UTC) every demo timestamp shifted
+    // by the IST offset and the timeline showed lunch at 18:30.
+    const at = (time: string) => atZone(date, time);
 
     const addMeal = (t: MealTemplate, time: string) =>
       meals.push({
