@@ -8,7 +8,7 @@ export default function WeekStats({ avg, std }: { avg: string; std: string }) {
         <div className="font-medium text-ink tabular-nums">{avg}</div>
       </div>
       <div>
-        <div className="text-ink-3">Day-to-day swing</div>
+        <div className="text-ink-3">Std dev</div>
         <div className="font-medium text-ink tabular-nums">{std}</div>
       </div>
     </div>
