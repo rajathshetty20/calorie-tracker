@@ -11,6 +11,7 @@ import {
   splitByDay,
 } from "@/lib/time";
 import { useWrite } from "../useWrite";
+import { useIsDemo } from "../DemoContext";
 
 export type EditableEntry = {
   id: string;
@@ -36,6 +37,7 @@ export default function TimeEntryRow({
   timeZone: string;
 }) {
   const { run, busy, error } = useWrite();
+  const isDemo = useIsDemo();
   const [editing, setEditing] = useState(false);
   const [startIso, setStartIso] = useState(entry.started_at);
   const [endIso, setEndIso] = useState(entry.ended_at ?? entry.started_at);
@@ -69,8 +71,9 @@ export default function TimeEntryRow({
     <li className="py-2">
       <div className="flex items-center justify-between gap-3">
         <button type="button"
-          onClick={() => setEditing((v) => !v)}
-          aria-expanded={editing}
+          onClick={() => !isDemo && setEditing((v) => !v)}
+          aria-expanded={isDemo ? undefined : editing}
+          title={isDemo ? "Sign in to adjust entries" : "Adjust start and end"}
  className="min-w-0 flex-1 text-left" >
           <div className="text-[0.8125rem]">{displayCategory(entry.category)}</div>
           <div className="text-[0.75rem] text-ink-3 tabular-nums">

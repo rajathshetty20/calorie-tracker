@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import TopBar from "./TopBar";
 import BottomNav from "./BottomNav";
 import { AddSheetProvider } from "./AddSheet";
+import { DemoProvider } from "./DemoContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -44,6 +45,7 @@ export default async function RootLayout({
     <html lang="en"
  className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} >
       <body className="min-h-full bg-ground text-ink">
+        <DemoProvider isDemo={!user}>
         <AddSheetProvider>
           <TopBar signedIn={!!user} />
           {/* Bottom padding clears the fixed nav plus the home indicator. */}
@@ -52,6 +54,7 @@ export default async function RootLayout({
           </main>
           <BottomNav />
         </AddSheetProvider>
+        </DemoProvider>
       </body>
     </html>
   );

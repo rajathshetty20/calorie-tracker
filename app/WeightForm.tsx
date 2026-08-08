@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { useWrite } from "./useWrite";
+import { SignInToSave, useIsDemo } from "./DemoContext";
 
 // Weighing yourself is a two-tap job: the number barely moves day to day, so
 // the field arrives prefilled with your last reading and the steppers cover
@@ -17,6 +18,7 @@ export default function WeightForm({
   lastWeight: number | null;
 }) {
   const { run, busy, error } = useWrite();
+  const isDemo = useIsDemo();
   const [kg, setKg] = useState(String(todaysWeight ?? lastWeight ?? ""));
   const [otherDay, setOtherDay] = useState(false);
   const [when, setWhen] = useState(today);
@@ -76,11 +78,15 @@ export default function WeightForm({
  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rule text-ink-2 hover:bg-surface-2" >
           <Plus className="h-4 w-4" />
         </button>
-        <button type="submit"
-          disabled={busy || !valid}
- className="shrink-0 rounded-lg bg-ink px-4 py-2.5 text-[0.8125rem] font-medium text-ground hover:bg-zinc-800 disabled:opacity-60" >
-          {busy ? "…" : "Save"}
-        </button>
+        {isDemo ? (
+          <SignInToSave label="Sign in to save" className="shrink-0" />
+        ) : (
+          <button type="submit"
+            disabled={busy || !valid}
+   className="shrink-0 rounded-lg bg-ink px-4 py-2.5 text-[0.8125rem] font-medium text-ground hover:bg-zinc-800 disabled:opacity-60" >
+            {busy ? "…" : "Save"}
+          </button>
+        )}
       </div>
 
       {otherDay && (

@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { KCAL_PER_G } from "@/lib/types";
 import { useWrite } from "../useWrite";
+import { SignInToSave, useIsDemo } from "../DemoContext";
 
 type Initial = {
   target_calories: number;
@@ -70,6 +71,7 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
   // effect and without a hydration mismatch.
   const detected = useSyncExternalStore(subscribeNever, readDeviceZone, readNothing);
   const { run, busy, error } = useWrite();
+  const isDemo = useIsDemo();
   const [target, setTarget] = useState(String(initial.target_calories));
   const [carbs, setCarbs] = useState(String(initial.carbs_pct));
   const [protein, setProtein] = useState(String(initial.protein_pct));
@@ -201,13 +203,17 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
 
       <div className="flex items-center justify-end gap-3 border-t border-rule pt-4">
         {dirty && !busy && <span className="text-[0.75rem] text-ink-3">Unsaved changes</span>}
-        <button
-          type="submit"
-          disabled={busy || !dirty}
-          className="w-full rounded-lg bg-ink px-4 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40 sm:w-auto"
-        >
-          {busy ? "Saving…" : dirty ? "Save changes" : "Saved"}
-        </button>
+        {isDemo ? (
+          <SignInToSave label="Sign in to save" className="w-full sm:w-auto" />
+        ) : (
+          <button
+            type="submit"
+            disabled={busy || !dirty}
+            className="w-full rounded-lg bg-ink px-4 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40 sm:w-auto"
+          >
+            {busy ? "Saving…" : dirty ? "Save changes" : "Saved"}
+          </button>
+        )}
       </div>
     </form>
   );

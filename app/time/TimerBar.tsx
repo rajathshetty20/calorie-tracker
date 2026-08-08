@@ -5,6 +5,7 @@ import { displayCategory, fmtDuration } from "@/lib/types";
 import { fmtClock } from "@/lib/time";
 import { useWrite } from "../useWrite";
 import { useTicker } from "./useTicker";
+import { useIsDemo } from "../DemoContext";
 
 export type RunningTimer = { id: string; category: string; started_at: string };
 
@@ -18,6 +19,7 @@ export type RunningTimer = { id: string; category: string; started_at: string };
  */
 export default function TimerBar({ timer }: { timer: RunningTimer }) {
   const { run, busy, error } = useWrite();
+  const isDemo = useIsDemo();
   const now = useTicker(true);
 
   const startedAt = new Date(timer.started_at).getTime();
@@ -59,7 +61,8 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
 
         <button type="button"
           onClick={stop}
-          disabled={busy}
+          disabled={busy || isDemo}
+          title={isDemo ? "Sign in to stop this timer" : undefined}
  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[0.75rem] font-medium text-ground hover:bg-emerald-700 disabled:opacity-60" >
           <Square className="h-3 w-3 fill-current" />
           Stop

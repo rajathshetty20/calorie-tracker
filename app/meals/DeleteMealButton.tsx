@@ -1,13 +1,15 @@
 "use client";
 
-import { DEMO_MESSAGE, useWrite } from "../useWrite";
+import { useWrite } from "../useWrite";
+import { useIsDemo } from "../DemoContext";
 
 export default function DeleteMealButton({ id }: { id: string }) {
   const { run, busy, error } = useWrite();
+  const isDemo = useIsDemo();
 
-  if (error === DEMO_MESSAGE) {
-    return <span className="text-[0.75rem] text-amber-600 dark:text-amber-400">read-only</span>;
-  }
+  // Nothing to delete in a sample dataset; offering the control only teases.
+  if (isDemo) return null;
+
   return (
     <button type="button"
       onClick={() =>

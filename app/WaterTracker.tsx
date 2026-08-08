@@ -6,6 +6,7 @@ import { Minus, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { plural } from "@/lib/types";
 import { DEMO_MESSAGE } from "./useWrite";
+import { useIsDemo } from "./DemoContext";
 
 const FLUSH_MS = 350;
 
@@ -27,6 +28,7 @@ export default function WaterTracker({
   bottleMl: number;
 }) {
   const router = useRouter();
+  const isDemo = useIsDemo();
   const [ml, setMl] = useState(initialMl);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -55,6 +57,12 @@ export default function WaterTracker({
   }
 
   function bump(delta: number) {
+    // In demo there is nothing to flush to, so don't move the number at all —
+    // an optimistic bump that snaps back a second later looks like a bug.
+    if (isDemo) {
+      setError("Sign in to log water — this is sample data.");
+      return;
+    }
     target.current = Math.max(0, target.current + delta);
     setMl(target.current); // optimistic, and never dropped
     setError(null);

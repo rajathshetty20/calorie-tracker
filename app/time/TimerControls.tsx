@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Play, Timer } from "lucide-react";
 import { displayCategory } from "@/lib/types";
 import { useWrite } from "../useWrite";
+import { SignInToSave, useIsDemo } from "../DemoContext";
 
 // Offsets in minutes. Negative is the common case — you remember to start
 // the timer a few minutes after you actually began.
@@ -23,6 +24,7 @@ export default function TimerControls({
   running: { category: string } | null;
 }) {
   const { run, busy, error } = useWrite();
+  const isDemo = useIsDemo();
   const [custom, setCustom] = useState("");
   const [offset, setOffset] = useState<number>(0);
   const [showOffset, setShowOffset] = useState(false);
@@ -53,7 +55,8 @@ export default function TimerControls({
           <button
             key={c} type="button"
             onClick={() => start(c)}
-            disabled={busy}
+            disabled={busy || isDemo}
+            title={isDemo ? "Sign in to start a timer" : undefined}
  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors disabled:opacity-50 ${
               running?.category === c
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
@@ -107,17 +110,30 @@ export default function TimerControls({
  className="flex gap-2" >
         <input type="text"
           value={custom}
-          onChange={(e) => setCustom(e.target.value)} placeholder="New activity (e.g. reading)"
+          onChange={(e) => setCustom(e.target.value)}
+          disabled={isDemo}
+          placeholder={isDemo ? "Sign in to time your own" : "New activity (e.g. reading)"}
           autoComplete="off"
  className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
-        <button type="submit"
-          disabled={busy || !custom.trim()}
- className="shrink-0 rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
-          Start
-        </button>
+        {isDemo ? (
+          <SignInToSave label="Sign in" className="shrink-0" />
+        ) : (
+          <button type="submit"
+            disabled={busy || !custom.trim()}
+   className="shrink-0 rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
+            Start
+          </button>
+        )}
       </form>
 
-      {running && (
+      {isDemo && (
+        // One sign-in affordance per action: the button beside the field
+        // already covers starting, so this is explanation only.
+        <p className="text-[0.75rem] text-ink-3">
+          The timer above is running on sample data. Starting your own needs an account.
+        </p>
+      )}
+      {running && !isDemo && (
         <p className="text-[0.75rem] text-ink-3">
           Starting another activity stops{" "}
           <span className="font-medium">{displayCategory(running.category)}</span> at the same
