@@ -2,9 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  // Server components have no direct access to the path; forward it so
-  // layout-level chrome can opt out on specific routes.
-  request.headers.set("x-pathname", request.nextUrl.pathname);
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
