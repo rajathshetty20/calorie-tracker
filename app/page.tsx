@@ -19,7 +19,6 @@ import DateStrip from "./DateStrip";
 import DemoBanner from "./DemoBanner";
 import Hero from "./Hero";
 import Timeline from "./Timeline";
-import WaterTracker from "./WaterTracker";
 import { Group } from "./ui";
 
 type DayData = {
@@ -196,12 +195,17 @@ export default async function HomePage({
 
       <Group title="At a glance">
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+          {/* Display only: water used to be the one thing loggable outside
+              the + sheet, which made the glance row half dashboard, half form. */}
           <Stat label="Water" domain="water">
-            <WaterTracker
-              key={date}
-              date={date}
-              initialMl={waterMl}
-              bottleMl={s?.bottle_ml ?? 1000} />
+            <StatValue
+              value={waterMl > 0 ? `${(waterMl / 1000).toFixed(1)} L` : "—"}
+              sub={
+                waterMl > 0
+                  ? plural(Math.round((waterMl / (s?.bottle_ml ?? 1000)) * 10) / 10, "bottle")
+                  : "not logged"
+              }
+            />
           </Stat>
           <Stat label="Weight" domain="weight">
             <StatValue

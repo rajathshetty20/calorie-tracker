@@ -2,8 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import { displayCategory, fmtDuration } from "@/lib/types";
-import { instantFromLocal, localDateISO, localTimeHHMM, spanMinutes } from "@/lib/time";
+import { spanMinutes } from "@/lib/time";
 import { useWrite } from "../useWrite";
+import DateTimeField from "./DateTimeField";
 
 /**
  * Manual backfill for time you didn't run a stopwatch for. It produces the
@@ -25,18 +26,18 @@ export default function TimeForm({
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Default to the hour just gone — that's what "I forgot to start it" means.
-  const [startLocal, setStartLocal] = useState(() => localInput(Date.now() - 3_600_000, timeZone));
-  const [endLocal, setEndLocal] = useState(() => localInput(Date.now(), timeZone));
+  const [startIso, setStartIso] = useState(() => new Date(Date.now() - 3_600_000).toISOString());
+  const [endIso, setEndIso] = useState(() => new Date().toISOString());
 
   const matches = useMemo(() => {
     const q = category.trim().toLowerCase();
     return (q ? categories.filter((c) => c.includes(q)) : categories).slice(0, 8);
   }, [category, categories]);
 
-  const start = toInstant(startLocal, timeZone);
-  const end = toInstant(endLocal, timeZone);
-  const minutes = start && end ? spanMinutes(start, end) : 0;
-  const valid = !!start && !!end && end.getTime() > start.getTime();
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const minutes = spanMinutes(start, end);
+  const valid = end.getTime() > start.getTime();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -97,21 +98,9 @@ export default function TimeForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2 rounded-lg border border-rule p-2 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-[0.75rem] text-ink-3">From</span>
-          <input type="datetime-local"
-            value={startLocal}
-            onChange={(e) => setStartLocal(e.target.value)}
- className="mt-1 w-full rounded-lg border border-rule bg-surface px-2 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
-        </label>
-        <label className="block">
-          <span className="text-[0.75rem] text-ink-3">To</span>
-          <input type="datetime-local"
-            value={endLocal}
-            onChange={(e) => setEndLocal(e.target.value)}
- className="mt-1 w-full rounded-lg border border-rule bg-surface px-2 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
-        </label>
+      <div className="space-y-2 rounded-lg border border-rule p-2">
+        <DateTimeField label="From" iso={startIso} timeZone={timeZone} onChange={setStartIso} />
+        <DateTimeField label="To" iso={endIso} timeZone={timeZone} onChange={setEndIso} />
       </div>
 
       <div className="flex items-center justify-between gap-3">
@@ -129,13 +118,4 @@ export default function TimeForm({
   );
 }
 
-function localInput(ms: number, timeZone: string) {
-  const d = new Date(ms);
-  return `${localDateISO(d, timeZone)}T${localTimeHHMM(d, timeZone)}`;
-}
 
-function toInstant(value: string, timeZone: string): Date | null {
-  const [d, t] = value.split("T");
-  if (!d || !t) return null;
-  return instantFromLocal(d, t.slice(0, 5), timeZone);
-}
