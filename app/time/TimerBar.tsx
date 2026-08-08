@@ -63,7 +63,7 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
           onClick={stop}
           disabled={busy || isDemo}
           title={isDemo ? "Sign in to stop this timer" : undefined}
- className="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[0.75rem] font-medium text-ground hover:bg-emerald-700 disabled:opacity-60" >
+ className="flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[0.8125rem] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60" >
           <Square className="h-3 w-3 fill-current" />
           Stop
         </button>

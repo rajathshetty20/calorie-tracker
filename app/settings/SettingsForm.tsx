@@ -161,10 +161,13 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         ) : null}
       </div>
 
+      {/* step must stay "any": HTML validates step relative to min, so
+          step="50" min="1" made 1000 — the app's own default — invalid, and
+          the form then refused to submit with nothing shown to the user. */}
       <label className="block border-t border-rule pt-4">
         <span className="text-[0.75rem] text-ink-3">Millilitres per water bottle</span>
         <input type="number"
-          inputMode="numeric" step="50" min="1"
+          inputMode="numeric" step="any" min="1"
           value={bottleMl}
           onChange={(e) => setBottleMl(e.target.value)}
           className="mt-1 block w-full max-w-[10rem] rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink"/>

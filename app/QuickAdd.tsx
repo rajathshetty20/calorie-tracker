@@ -90,7 +90,7 @@ export default function QuickAdd({
                 key={t.key} type="button"
                 onClick={() => setTab(t.key)}
                 aria-pressed={tab === t.key}
- className={`shrink-0 rounded-lg px-3 py-1.5 text-[0.8125rem] font-semibold transition-colors ${
+ className={`min-h-[40px] shrink-0 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold transition-colors ${
                   tab === t.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
                 }`} >
                 <span className="flex items-center gap-1.5">

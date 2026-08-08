@@ -68,7 +68,7 @@ export function RangeToggle() {
           key={r} type="button"
           onClick={() => setRange(r)}
           aria-pressed={range === r}
- className={`px-2.5 py-1.5 ${
+ className={`min-h-[38px] px-3 py-2 ${
             range === r
               ? "bg-ink text-ground"
               : "bg-white text-ink-2 hover:bg-surface-2"

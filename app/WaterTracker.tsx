@@ -120,14 +120,14 @@ export default function WaterTracker({
           <button type="button"
             onClick={() => bump(-bottleMl)}
             disabled={ml === 0} aria-label="Remove a bottle"
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-rule text-ink-2 hover:bg-surface-2 disabled:opacity-30" >
-            <Minus className="h-3.5 w-3.5" />
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-rule text-ink-2 hover:bg-surface-2 disabled:opacity-30" >
+            <Minus className="h-4 w-4" />
           </button>
           <button type="button"
             onClick={() => bump(bottleMl)} aria-label="Add a bottle"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-ground"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-white"
             style={{ backgroundColor: "var(--water)" }} >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
           </button>
         </div>
       </div>

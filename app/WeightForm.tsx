@@ -59,7 +59,7 @@ export default function WeightForm({
         </button>
         <div className="relative min-w-0 flex-1">
           <input type="number"
-            inputMode="decimal" step="0.1" min="0"
+            inputMode="decimal" step="any" min="0"
             required
             value={kg}
             onChange={(e) => {

@@ -28,7 +28,7 @@ export default function ChartSwitcher({
               type="button"
               onClick={() => setActive(t.key)}
               aria-pressed={t.key === current.key}
-              className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[0.8125rem] font-semibold whitespace-nowrap transition-colors ${
+              className={`min-h-[38px] shrink-0 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold whitespace-nowrap transition-colors ${
                 t.key === current.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
               }`}
             >
