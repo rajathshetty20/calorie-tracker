@@ -42,11 +42,9 @@ export function ChartHeader({
     <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
       <h2 className="text-[0.8125rem] font-medium text-ink-3">{title}</h2>
       {note && <AggregationChip label={note} />}
-      <div className="order-last w-full sm:order-none sm:w-auto">
-        <WeekStats avg={avg} std={std} />
-      </div>
+      {/* The range control belongs to ChartSwitcher now — one per page. */}
       <div className="ml-auto">
-        <RangeToggle />
+        <WeekStats avg={avg} std={std} />
       </div>
     </div>
   );

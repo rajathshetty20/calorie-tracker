@@ -25,7 +25,6 @@ import {
   CHART_BODY,
   fmtFullDate,
   fmtTick,
-  RangeToggle,
   TooltipCard,
   xTickProps,
 } from "./chartParts";
@@ -120,9 +119,6 @@ export default function ExerciseChart({
         {aggregationLabel(1, smoothWindow, "session") && (
           <AggregationChip label={aggregationLabel(1, smoothWindow, "session")!} />
         )}
-        <div className="ml-auto">
-          <RangeToggle />
-        </div>
         {names.length > 0 && (
           <div className="order-last flex w-full flex-wrap items-center gap-2">
             <select

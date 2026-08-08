@@ -11,6 +11,9 @@ import WeightChart from "./WeightChart";
 import ExerciseChart from "./ExerciseChart";
 import TimeChart, { type TimeDay } from "./TimeChart";
 import { RangeProvider } from "./RangeContext";
+import ChartSwitcher from "./ChartSwitcher";
+import CaloriesWeightChart from "./CaloriesWeightChart";
+import TrendsCard, { type Trend } from "./TrendsCard";
 import { parseRange } from "./range";
 
 const LOOKBACK_DAYS = 90;
@@ -200,6 +203,80 @@ export default async function HistoryPage({
       .filter((total) => total > 0),
   );
 
+  // "Is this week different from last week?" is the first question a history
+  // page should answer, before any chart is read.
+  const last7 = rows.slice(-WEEK_DAYS);
+  const prev7 = rows.slice(-WEEK_DAYS * 2, -WEEK_DAYS);
+  const water7 = waterRows.slice(-WEEK_DAYS);
+  const waterPrev = waterRows.slice(-WEEK_DAYS * 2, -WEEK_DAYS);
+  const time7 = timeRows.slice(-WEEK_DAYS);
+  const timePrev = timeRows.slice(-WEEK_DAYS * 2, -WEEK_DAYS);
+
+  const avg = (values: number[]) =>
+    values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  const kcalAvg = (days: DayRow[]) => avg(days.filter((d) => d.total_kcal > 0).map((d) => d.total_kcal));
+  const waterAvg = (days: WaterDay[]) => avg(days.filter((d) => d.litres > 0).map((d) => d.litres));
+  const sleepAvg = (days: TimeDay[]) => avg(days.map((d) => d.totals.sleep ?? 0).filter((m) => m > 0));
+
+  const kcalNow = kcalAvg(last7);
+  const kcalWas = kcalAvg(prev7);
+  const waterNow = waterAvg(water7);
+  const waterWas = waterAvg(waterPrev);
+  const sleepNow = sleepAvg(time7);
+  const sleepWas = sleepAvg(timePrev);
+
+  const weightNow = weightSeries.filter((w) => w.date >= weekCutoff).at(-1)?.kg ?? null;
+  const weightWas = weightSeries.filter((w) => w.date < weekCutoff).at(-1)?.kg ?? null;
+
+  const diff = (now: number | null, was: number | null) =>
+    now !== null && was !== null ? now - was : null;
+
+  const signed = (n: number, digits: number, unit: string) =>
+    `${n > 0 ? "+" : n < 0 ? "−" : "±"}${Math.abs(n).toFixed(digits)}${unit}`;
+
+  const kcalDelta = diff(kcalNow, kcalWas);
+  const waterDelta = diff(waterNow, waterWas);
+  const sleepDelta = diff(sleepNow, sleepWas);
+  const weightDelta = diff(weightNow, weightWas);
+
+  const trends: Trend[] = [
+    {
+      domain: "food",
+      label: "Calories",
+      value: kcalNow === null ? "—" : `${Math.round(kcalNow).toLocaleString()}`,
+      delta: kcalDelta,
+      deltaLabel: kcalDelta === null ? "" : `${signed(Math.round(kcalDelta), 0, "")} kcal/day`,
+      direction: "neutral",
+    },
+    {
+      domain: "water",
+      label: "Water",
+      value: waterNow === null ? "—" : `${waterNow.toFixed(1)} L`,
+      delta: waterDelta,
+      deltaLabel: waterDelta === null ? "" : `${signed(waterDelta, 1, " L")}/day`,
+      direction: "up-good",
+    },
+    {
+      domain: "weight",
+      label: "Weight",
+      value: weightNow === null ? "—" : `${weightNow} kg`,
+      delta: weightDelta,
+      deltaLabel: weightDelta === null ? "" : `${signed(weightDelta, 1, " kg")}`,
+      direction: "neutral",
+    },
+    {
+      domain: "time",
+      label: "Sleep",
+      value: sleepNow === null ? "—" : fmtDuration(sleepNow),
+      delta: sleepDelta,
+      deltaLabel:
+        sleepDelta === null
+          ? ""
+          : `${sleepDelta > 0 ? "+" : sleepDelta < 0 ? "−" : "±"}${fmtDuration(Math.abs(sleepDelta))}/night`,
+      direction: "up-good",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {isDemo && <DemoBanner />}
@@ -209,34 +286,82 @@ export default async function HistoryPage({
         <p className="text-[0.8125rem] text-ink-3">Calories, water, weight, exercise, and time.</p>
       </header>
 
-      {/* One range for every chart below: independent toggles made
-          cross-domain comparison quietly wrong. */}
+      <TrendsCard trends={trends} />
+
+      {/* One range for every chart, and one chart at a time: five stacked
+          charts repeated the range control five times and buried any single
+          comparison under four others. */}
       <RangeProvider initial={range}>
-        <div className="space-y-6">
-          <HistoryChart
-            rows={rows}
-            target={target}
-            avg7={kcalStats.n ? `${Math.round(kcalStats.mean)} kcal` : "—"}
-            std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"} />
-
-          <WaterChart
-            rows={waterRows}
-            avg7={waterStats.n ? `${waterStats.mean.toFixed(1)} L` : "—"}
-            std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"} />
-
-          <WeightChart
-            data={weightSeries}
-            today={end}
-            avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
-            std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"} />
-
-          <ExerciseChart rows={exercises} today={end} />
-
-          <TimeChart
-            rows={timeRows}
-            avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
-            std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"} />
-        </div>
+        <ChartSwitcher
+          tabs={[
+            {
+              key: "calories",
+              label: "Calories",
+              color: "var(--food)",
+              node: (
+                <HistoryChart
+                  key="calories"
+                  rows={rows}
+                  target={target}
+                  avg7={kcalStats.n ? `${Math.round(kcalStats.mean)} kcal` : "—"}
+                  std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"}
+                />
+              ),
+            },
+            {
+              key: "weight",
+              label: "Weight",
+              color: "var(--weight)",
+              node: (
+                <WeightChart
+                  key="weight"
+                  data={weightSeries}
+                  today={end}
+                  avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
+                  std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
+                />
+              ),
+            },
+            {
+              key: "vs",
+              label: "Cal vs weight",
+              color: "var(--exercise)",
+              node: <CaloriesWeightChart key="vs" calories={rows} weights={weightSeries} />,
+            },
+            {
+              key: "water",
+              label: "Water",
+              color: "var(--water)",
+              node: (
+                <WaterChart
+                  key="water"
+                  rows={waterRows}
+                  avg7={waterStats.n ? `${waterStats.mean.toFixed(1)} L` : "—"}
+                  std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"}
+                />
+              ),
+            },
+            {
+              key: "exercise",
+              label: "Exercise",
+              color: "var(--exercise)",
+              node: <ExerciseChart key="exercise" rows={exercises} today={end} />,
+            },
+            {
+              key: "time",
+              label: "Time",
+              color: "var(--time)",
+              node: (
+                <TimeChart
+                  key="time"
+                  rows={timeRows}
+                  avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
+                  std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"}
+                />
+              ),
+            },
+          ]}
+        />
       </RangeProvider>
     </div>
   );

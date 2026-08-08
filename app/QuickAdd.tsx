@@ -26,7 +26,16 @@ const TABS: { key: Domain; label: string }[] = [
  * used to cost open → scroll to the right section → expand → fill → submit.
  * Now it's one tap from any screen.
  */
-export default function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function QuickAdd({
+  open,
+  viewing,
+  onClose,
+}: {
+  open: boolean;
+  /** Day from ?d=, captured when the sheet opened; null means today. */
+  viewing: string | null;
+  onClose: () => void;
+}) {
   const [tab, setTab] = useState<Domain>("food");
   const [data, setData] = useState<QuickAddData | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -59,6 +68,10 @@ export default function QuickAdd({ open, onClose }: { open: boolean; onClose: ()
   }, [open, onClose]);
 
   if (!open) return null;
+
+  // Browsing a past day and hitting + used to file the entry against today.
+  const target = data ? (viewing && viewing < data.today ? viewing : data.today) : null;
+  const backdating = !!target && !!data && target !== data.today;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -98,26 +111,41 @@ export default function QuickAdd({ open, onClose }: { open: boolean; onClose: ()
           </button>
         </div>
 
+        {backdating && data && (
+          <p className="border-b border-rule bg-surface-2 px-4 py-2 text-[0.75rem] text-ink-2">
+            Logging to{" "}
+            <span className="font-semibold">
+              {new Date(`${target}T12:00:00`).toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+            , the day you&apos;re viewing — not today.
+          </p>
+        )}
+
         <div className="px-4 py-4">
           {!data ? (
             <p className="py-6 text-center text-[0.8125rem] text-ink-3">Loading…</p>
           ) : (
             <>
-              {tab === "food" && <MealForm presets={data.mealPresets} today={data.today} />}
+              {tab === "food" && <MealForm presets={data.mealPresets} today={target!} />}
               {tab === "water" && (
                 <div className="rounded-lg border border-rule p-3">
                   <WaterTracker
-                    date={data.today}
+                    key={target!}
+                    date={target!}
                     initialMl={data.waterMl}
                     bottleMl={data.bottleMl} />
                 </div>
               )}
               {tab === "exercise" && (
-                <ExerciseForm presets={data.exercisePresets} today={data.today} />
+                <ExerciseForm presets={data.exercisePresets} today={target!} />
               )}
               {tab === "weight" && (
                 <WeightForm
-                  today={data.today}
+                  today={target!}
                   todaysWeight={data.todaysWeight}
                   lastWeight={data.lastWeight} />
               )}
