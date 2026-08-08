@@ -51,53 +51,47 @@ export default function TimerControls({
       <div className="flex flex-wrap items-center gap-1.5">
         {categories.map((c) => (
           <button
-            key={c}
-            type="button"
+            key={c} type="button"
             onClick={() => start(c)}
             disabled={busy}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+ className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors disabled:opacity-50 ${
               running?.category === c
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-                : "border-zinc-300 text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            }`}
-          >
+                : "border-rule text-zinc-700 hover:border-rule hover:bg-surface-2"
+            }`} >
             <Play className="h-3 w-3 fill-current" />
             {displayCategory(c)}
           </button>
         ))}
-        <button
-          type="button"
+        <button type="button"
           onClick={() => setShowOffset((v) => !v)}
           aria-expanded={showOffset}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+ className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors ${
             offset !== 0
-              ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-              : "border-dashed border-zinc-300 text-zinc-500 hover:border-zinc-400 dark:border-zinc-700"
-          }`}
-        >
+              ? "border-zinc-900 text-ink"
+              : "border-dashed border-rule text-ink-3 hover:border-rule"
+          }`} >
           <Timer className="h-3.5 w-3.5" />
           {offset === 0 ? "Offset" : offsetLabel}
         </button>
       </div>
 
       {showOffset && (
-        <div className="rounded-md border border-zinc-200 p-2 dark:border-zinc-800">
-          <div className="mb-1.5 text-xs text-zinc-500">
+        <div className="rounded-lg border border-rule p-2">
+          <div className="mb-1.5 text-[0.75rem] text-ink-3">
             Shift the start. Before bed, pick <span className="font-medium">in 15 min</span> so the
             clock hits zero when you actually fall asleep.
           </div>
           <div className="flex flex-wrap gap-1">
             {OFFSETS.map((o) => (
               <button
-                key={o}
-                type="button"
+                key={o} type="button"
                 onClick={() => setOffset(o)}
-                className={`rounded px-2 py-1 text-xs tabular-nums ${
+ className={`rounded px-2 py-1 text-[0.75rem] tabular-nums ${
                   offset === o
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                }`}
-              >
+                    ? "bg-ink text-ground"
+                    : "bg-surface-2 text-ink-2 hover:bg-zinc-200"
+                }`} >
                 {o === 0 ? "now" : o > 0 ? `+${o}` : o}
               </button>
             ))}
@@ -110,33 +104,27 @@ export default function TimerControls({
           e.preventDefault();
           start(custom);
         }}
-        className="flex gap-2"
-      >
-        <input
-          type="text"
+ className="flex gap-2" >
+        <input type="text"
           value={custom}
-          onChange={(e) => setCustom(e.target.value)}
-          placeholder="New activity (e.g. reading)"
+          onChange={(e) => setCustom(e.target.value)} placeholder="New activity (e.g. reading)"
           autoComplete="off"
-          className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
-        <button
-          type="submit"
+ className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
+        <button type="submit"
           disabled={busy || !custom.trim()}
-          className="shrink-0 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
+ className="shrink-0 rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
           Start
         </button>
       </form>
 
       {running && (
-        <p className="text-xs text-zinc-500">
+        <p className="text-[0.75rem] text-ink-3">
           Starting another activity stops{" "}
           <span className="font-medium">{displayCategory(running.category)}</span> at the same
           instant — no gap.
         </p>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-[0.8125rem] text-over">{error}</p>}
     </div>
   );
 }

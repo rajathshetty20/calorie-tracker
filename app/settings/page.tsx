@@ -24,10 +24,10 @@ export default async function SettingsPage() {
 
       <header>
         <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-sm text-zinc-500">Daily target, macro split, bottle size, and timezone.</p>
+        <p className="text-[0.8125rem] text-ink-3">Daily target, macro split, bottle size, and timezone.</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="border-t border-rule pt-3">
         <SettingsForm
           initial={
             settings ?? {
@@ -38,8 +38,7 @@ export default async function SettingsPage() {
               bottle_ml: 1000,
               timezone: "Asia/Kolkata",
             }
-          }
-        />
+          } />
       </section>
     </div>
   );

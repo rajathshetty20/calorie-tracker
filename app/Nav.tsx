@@ -20,7 +20,7 @@ export default function Nav() {
   const pathname = usePathname();
   const inDemo = pathname === "/demo" || pathname.startsWith("/demo/");
   return (
-    <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+    <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[0.8125rem]">
       {inDemo && (
         <span className="mr-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
           Demo
@@ -36,12 +36,11 @@ export default function Nav() {
           <Link
             key={base}
             href={href}
-            className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors ${
+ className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors ${
               isActive
-                ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-            }`}
-          >
+                ? "bg-surface-2 font-medium text-ink"
+                : "text-ink-2 hover:bg-surface-2 hover:text-ink"
+            }`} >
             <Icon className="h-3.5 w-3.5" />
             {label}
           </Link>

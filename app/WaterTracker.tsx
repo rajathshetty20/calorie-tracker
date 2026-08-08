@@ -6,7 +6,6 @@ import { Minus, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { plural } from "@/lib/types";
 import { DEMO_MESSAGE } from "./useWrite";
-import { TileBody } from "./Tile";
 
 const FLUSH_MS = 350;
 
@@ -102,32 +101,29 @@ export default function WaterTracker({
 
   return (
     <div>
-      <TileBody
-        value={`${(ml / 1000).toFixed(1)} L`}
-        sub={plural(bottles, "bottle")}
-        actions={
-          <>
-            <button
-              type="button"
-              onClick={() => bump(-bottleMl)}
-              disabled={ml === 0}
-              aria-label="Remove a bottle"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => bump(bottleMl)}
-              aria-label="Add a bottle"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-sky-300 text-sky-600 transition-colors hover:bg-sky-50 dark:border-sky-900 dark:text-sky-400 dark:hover:bg-sky-950/40"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </>
-        }
-      />
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="tnum text-[1.125rem] font-semibold leading-tight">
+            {(ml / 1000).toFixed(1)} L
+          </div>
+          <div className="tnum truncate text-[0.75rem] text-ink-3">{plural(bottles, "bottle")}</div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <button type="button"
+            onClick={() => bump(-bottleMl)}
+            disabled={ml === 0} aria-label="Remove a bottle"
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-rule text-ink-2 hover:bg-surface-2 disabled:opacity-30" >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <button type="button"
+            onClick={() => bump(bottleMl)} aria-label="Add a bottle"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-ground"
+            style={{ backgroundColor: "var(--water)" }} >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      {error && <span className="text-[0.75rem] text-over">{error}</span>}
     </div>
   );
 }

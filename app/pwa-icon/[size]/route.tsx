@@ -24,10 +24,8 @@ export async function GET(
       <img
         src={markDataUri()}
         width={size}
-        height={size}
-        alt=""
-        style={{ width: "100%", height: "100%" }}
-      />
+        height={size} alt=""
+        style={{ width: "100%", height: "100%" }} />
     ),
     { width: size, height: size },
   );

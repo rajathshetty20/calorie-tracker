@@ -109,17 +109,15 @@ export default function TimeChart({
   ];
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <ChartHeader
-        title="Time"
+    <section className="border-t border-rule pt-3">
+      <ChartHeader title="Time"
         avg={avg7}
         std={std7}
-        note={aggregationLabel(bucketSize, 1)}
-      />
+        note={aggregationLabel(bucketSize, 1)} />
 
       {named.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-[0.8125rem] text-ink-3">
             No time tracked yet — log it on the Today page.
           </p>
         </div>
@@ -133,13 +131,11 @@ export default function TimeChart({
                   dataKey="date"
                   tickFormatter={(v: string) => fmtTick(v, range)}
                   {...AXIS_PROPS}
-                  {...xTickProps(range)}
-                />
+                  {...xTickProps(range)} />
                 <YAxis
                   {...AXIS_PROPS}
                   width={38}
-                  tickFormatter={(v: number) => `${Math.round((v / 60) * 10) / 10}h`}
-                />
+                  tickFormatter={(v: number) => `${Math.round((v / 60) * 10) / 10}h`} />
                 <Tooltip cursor={CHART_CURSOR} content={<TimeTooltip series={series} />} />
                 {series.map((s, i) => (
                   <Bar
@@ -147,22 +143,19 @@ export default function TimeChart({
                     dataKey={s.key}
                     stackId="time"
                     name={s.label}
-                    fill={s.color}
-                    stroke="var(--chart-surface)"
+                    fill={s.color} stroke="var(--chart-surface)"
                     strokeWidth={1}
-                    radius={i === series.length - 1 ? [4, 4, 0, 0] : undefined}
-                  />
+                    radius={i === series.length - 1 ? [4, 4, 0, 0] : undefined} />
                 ))}
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-zinc-500">
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[0.75rem] text-ink-3">
             {series.map((s) => (
               <span key={s.key} className="inline-flex items-center gap-1.5">
                 <span
-                  className="inline-block h-2 w-2 rounded-sm"
-                  style={{ backgroundColor: s.color }}
-                />
+ className="inline-block h-2 w-2 rounded-sm"
+                  style={{ backgroundColor: s.color }} />
                 {s.label}
               </span>
             ))}
@@ -193,15 +186,15 @@ function TimeTooltip({
   if (present.length === 0) return null;
   const total = present.reduce((a, s) => a + s.minutes, 0);
   return (
-    <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="rounded-lg border border-rule bg-surface px-3 py-2 text-[0.75rem] shadow-sm ">
       <div className="font-medium">{fmtSpan(row.startDate, row.endDate)}</div>
       {row.size > 1 && (
-        <div className="mb-1 text-zinc-500">Average per tracked day · {row.size} days</div>
+        <div className="mb-1 text-ink-3">Average per tracked day · {row.size} days</div>
       )}
       <div className="tabular-nums">Total: {fmtDuration(total)}</div>
       <div className="mt-1 space-y-0.5">
         {present.map((s) => (
-          <div key={s.key} className="flex items-center gap-1.5 tabular-nums text-zinc-500">
+          <div key={s.key} className="flex items-center gap-1.5 tabular-nums text-ink-3">
             <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: s.color }} />
             <span>{s.label}</span>
             <span className="ml-auto pl-3">{fmtDuration(s.minutes)}</span>

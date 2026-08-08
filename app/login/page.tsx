@@ -28,45 +28,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
+    <div className="flex min-h-screen items-center justify-center bg-surface-2 p-6">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-      >
+ className="w-full max-w-sm space-y-4 rounded-xl border border-rule bg-surface p-6 shadow-sm" >
         <div className="flex items-center gap-3">
           <Logo className="h-9 w-9 shrink-0" />
           <div>
             <h1 className="text-xl font-semibold">Daily tracker</h1>
-            <p className="text-sm text-zinc-500">Sign in with a magic link.</p>
+            <p className="text-[0.8125rem] text-ink-3">Sign in with a magic link.</p>
           </div>
         </div>
-        <input
-          type="email"
-          required
-          placeholder="you@example.com"
+        <input type="email"
+          required placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
-        <button
-          type="submit"
+ className="w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
+        <button type="submit"
           disabled={status === "sending"}
-          className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
+ className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
           {status === "sending" ? "Sending..." : "Send link"}
         </button>
         {status === "sent" && (
-          <p className="text-sm text-emerald-600">Check your inbox for the link.</p>
+          <p className="text-[0.8125rem] text-emerald-600">Check your inbox for the link.</p>
         )}
         {status === "error" && error && (
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-[0.8125rem] text-over">{error}</p>
         )}
-        <p className="border-t border-zinc-200 pt-4 text-center text-sm text-zinc-500 dark:border-zinc-800">
+        <p className="border-t border-rule pt-4 text-center text-[0.8125rem] text-ink-3">
           Just looking?{" "}
-          <Link
-            href="/demo"
-            className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
-          >
+          <Link href="/demo"
+ className="font-medium text-ink underline underline-offset-2 hover:text-ink-2" >
             Browse the demo
           </Link>
         </p>

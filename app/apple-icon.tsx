@@ -12,10 +12,8 @@ export default function AppleIcon() {
       <img
         src={markDataUri()}
         width={size.width}
-        height={size.height}
-        alt=""
-        style={{ width: "100%", height: "100%" }}
-      />
+        height={size.height} alt=""
+        style={{ width: "100%", height: "100%" }} />
     ),
     { ...size },
   );

@@ -62,13 +62,11 @@ export default function WaterChart({
   );
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <ChartHeader
-        title="Water"
+    <section className="border-t border-rule pt-3">
+      <ChartHeader title="Water"
         avg={avg7}
         std={std7}
-        note={aggregationLabel(bucketSize, 1)}
-      />
+        note={aggregationLabel(bucketSize, 1)} />
 
       <div className={CHART_BODY} ref={ref}>
         <ResponsiveContainer width="100%" height="100%">
@@ -78,13 +76,11 @@ export default function WaterChart({
               dataKey="date"
               tickFormatter={(v: string) => fmtTick(v, range)}
               {...AXIS_PROPS}
-              {...xTickProps(range)}
-            />
+              {...xTickProps(range)} />
             <YAxis
               {...AXIS_PROPS}
               width={38}
-              tickFormatter={(v: number) => `${v}L`}
-            />
+              tickFormatter={(v: number) => `${v}L`} />
             <Tooltip cursor={CHART_CURSOR} content={<WaterTooltip />} />
             <Bar dataKey="litres" fill="#0ea5e9" name="Water" radius={[4, 4, 0, 0]} />
           </BarChart>
@@ -108,8 +104,7 @@ function WaterTooltip({
   return (
     <TooltipCard
       title={fmtSpan(row.startDate, row.endDate)}
-      subtitle={row.size > 1 ? `Average per logged day · ${row.size} days` : null}
-    >
+      subtitle={row.size > 1 ? `Average per logged day · ${row.size} days` : null} >
       <div className="tabular-nums">{row.litres.toFixed(1)} L</div>
     </TooltipCard>
   );

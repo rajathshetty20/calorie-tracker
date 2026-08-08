@@ -83,13 +83,11 @@ export default function HistoryChart({
   );
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <ChartHeader
-        title="Calories"
+    <section className="border-t border-rule pt-3">
+      <ChartHeader title="Calories"
         avg={avg7}
         std={std7}
-        note={aggregationLabel(bucketSize, 1)}
-      />
+        note={aggregationLabel(bucketSize, 1)} />
 
       <div className={CHART_BODY} ref={ref}>
         <ResponsiveContainer width="100%" height="100%">
@@ -99,8 +97,7 @@ export default function HistoryChart({
               dataKey="date"
               tickFormatter={(v: string) => fmtTick(v, range)}
               {...AXIS_PROPS}
-              {...xTickProps(range)}
-            />
+              {...xTickProps(range)} />
             <YAxis {...AXIS_PROPS} width={38} />
             <Tooltip cursor={CHART_CURSOR} content={<MacroTooltip />} />
             <ReferenceLine y={target} stroke="#71717a" strokeDasharray="4 4" />
@@ -111,12 +108,12 @@ export default function HistoryChart({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-500">
+      <div className="mt-3 flex flex-wrap gap-3 text-[0.75rem] text-ink-3">
         <Legend color="bg-amber-500" label="Carbs" />
         <Legend color="bg-sky-500" label="Protein" />
         <Legend color="bg-rose-500" label="Fat" />
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block w-4 border-t-2 border-dashed border-zinc-400 dark:border-zinc-500" />
+          <span className="inline-block w-4 border-t-2 border-dashed border-rule" />
           Target {target}
         </span>
       </div>
@@ -148,10 +145,9 @@ function MacroTooltip({
   return (
     <TooltipCard
       title={fmtSpan(row.startDate, row.endDate)}
-      subtitle={bucketed ? `Average per logged day · ${row.size} days` : null}
-    >
+      subtitle={bucketed ? `Average per logged day · ${row.size} days` : null} >
       <div className="tabular-nums">Total: {Math.round(row.total_kcal)} kcal</div>
-      <div className="mt-1 grid grid-cols-2 gap-x-3 tabular-nums text-zinc-500">
+      <div className="mt-1 grid grid-cols-2 gap-x-3 tabular-nums text-ink-3">
         <span>Carbs</span><span>{Math.round(row.carbs_g)}g · {Math.round(row.carbs_kcal)} kcal</span>
         <span>Protein</span><span>{Math.round(row.protein_g)}g · {Math.round(row.protein_kcal)} kcal</span>
         <span>Fat</span><span>{Math.round(row.fat_g)}g · {Math.round(row.fat_kcal)} kcal</span>

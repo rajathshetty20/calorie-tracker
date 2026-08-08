@@ -97,14 +97,11 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <label className="block">
-        <span className="text-xs text-zinc-500">Daily calories target</span>
-        <input
-          type="number"
-          min="1"
+        <span className="text-[0.75rem] text-ink-3">Daily calories target</span>
+        <input type="number" min="1"
           value={target}
           onChange={(e) => setTarget(e.target.value)}
-          className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
       </label>
 
       <div className="grid grid-cols-3 gap-2">
@@ -113,62 +110,53 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         <PctField label="Fat %" value={fat} grams={grams.fat} onChange={setFat} />
       </div>
 
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex items-center justify-between text-[0.75rem]">
         <span className={sum === 100 ? "text-emerald-600" : "text-amber-600"}>
           Total: {sum}%
         </span>
         {/* Write failures come from useWrite; validation and success from msg. */}
         {error ? (
-          <span className="text-red-600">{error}</span>
+          <span className="text-over">{error}</span>
         ) : msg ? (
-          <span className={msg.kind === "ok" ? "text-emerald-600" : "text-red-600"}>
+          <span className={msg.kind === "ok" ? "text-emerald-600" : "text-over"}>
             {msg.text}
           </span>
         ) : null}
       </div>
 
-      <label className="block border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <span className="text-xs text-zinc-500">Millilitres per water bottle</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          step="50"
-          min="1"
+      <label className="block border-t border-rule pt-4">
+        <span className="text-[0.75rem] text-ink-3">Millilitres per water bottle</span>
+        <input type="number"
+          inputMode="numeric" step="50" min="1"
           value={bottleMl}
           onChange={(e) => setBottleMl(e.target.value)}
-          className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
-        <span className="mt-1 block text-xs text-zinc-500">
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+        <span className="mt-1 block text-[0.75rem] text-ink-3">
           One tap on the Today page logs this much water.
         </span>
       </label>
 
-      <label className="block border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <span className="text-xs text-zinc-500">Timezone</span>
-        <input
-          type="text"
+      <label className="block border-t border-rule pt-4">
+        <span className="text-[0.75rem] text-ink-3">Timezone</span>
+        <input type="text"
           value={timezone}
-          onChange={(e) => setTimezone(e.target.value.trim())}
-          list="tz-suggestions"
+          onChange={(e) => setTimezone(e.target.value.trim())} list="tz-suggestions"
           spellCheck={false}
-          className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
         <datalist id="tz-suggestions">
           {COMMON_ZONES.map((z) => (
             <option key={z} value={z} />
           ))}
         </datalist>
-        <span className="mt-1 block text-xs text-zinc-500">
+        <span className="mt-1 block text-[0.75rem] text-ink-3">
           Decides where your day starts and ends — including how an entry that
           crosses midnight is divided between two days.
           {detected && detected !== timezone && (
             <>
               {" "}
-              <button
-                type="button"
+              <button type="button"
                 onClick={() => setTimezone(detected)}
-                className="underline underline-offset-2"
-              >
+ className="underline underline-offset-2" >
                 Use this device&apos;s zone ({detected})
               </button>
             </>
@@ -176,11 +164,9 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
         </span>
       </label>
 
-      <button
-        type="submit"
+      <button type="submit"
         disabled={busy}
-        className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-      >
+ className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
         {busy ? "Saving..." : "Save"}
       </button>
     </form>
@@ -200,16 +186,12 @@ function PctField({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-zinc-500">{label}</span>
-      <input
-        type="number"
-        min="0"
-        max="100"
+      <span className="text-[0.75rem] text-ink-3">{label}</span>
+      <input type="number" min="0" max="100"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-      />
-      <span className="mt-1 block text-xs text-zinc-500 tabular-nums">≈ {grams}g</span>
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+      <span className="mt-1 block text-[0.75rem] text-ink-3 tabular-nums">≈ {grams}g</span>
     </label>
   );
 }

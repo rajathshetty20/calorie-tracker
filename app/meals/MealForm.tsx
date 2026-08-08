@@ -10,7 +10,16 @@ export type MealPreset = {
   fat_g: number;
 };
 
-export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
+export default function MealForm({
+  presets = [],
+  today,
+}: {
+  presets?: MealPreset[];
+  // The local date, resolved server-side from settings.timezone. Letting the
+  // database default eaten_on to current_date would file a 1am meal against
+  // the previous UTC day.
+  today: string;
+}) {
   const { run, busy, error } = useWrite();
   const [name, setName] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -40,6 +49,7 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
       supabase.from("meals").insert({
         id: newId(),
         user_id: userId,
+        eaten_on: today,
         name: name || null,
         carbs_g: Number(carbs) || 0,
         protein_g: Number(protein) || 0,
@@ -58,9 +68,7 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="relative">
-        <input
-          type="text"
-          placeholder="Meal name (optional)"
+        <input type="text" placeholder="Meal name (optional)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onFocus={() => {
@@ -71,23 +79,20 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
             blurTimer.current = setTimeout(() => setFocused(false), 120);
           }}
           autoComplete="off"
-          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
+ className="w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
         {showSuggestions && (
-          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-lg border border-rule bg-surface shadow-md">
             {matches.map((p) => (
               <li key={p.name}>
-                <button
-                  type="button"
+                <button type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     applyPreset(p);
                     setFocused(false);
                   }}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
+ className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[0.8125rem] hover:bg-surface-2" >
                   <span className="truncate">{p.name}</span>
-                  <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
+                  <span className="shrink-0 text-[0.75rem] text-ink-3 tabular-nums">
                     C {p.carbs_g}g · P {p.protein_g}g · F {p.fat_g}g
                   </span>
                 </button>
@@ -101,12 +106,10 @@ export default function MealForm({ presets = [] }: { presets?: MealPreset[] }) {
         <NumField label="Protein (g)" value={protein} onChange={setProtein} />
         <NumField label="Fat (g)" value={fat} onChange={setFat} />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
+      {error && <p className="text-[0.8125rem] text-over">{error}</p>}
+      <button type="submit"
         disabled={busy}
-        className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-      >
+ className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
         {busy ? "Adding..." : "Add meal"}
       </button>
     </form>
@@ -124,17 +127,12 @@ function NumField({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-zinc-500">{label}</span>
-      <input
-        type="number"
-        inputMode="decimal"
-        step="0.1"
-        min="0"
+      <span className="text-[0.75rem] text-ink-3">{label}</span>
+      <input type="number"
+        inputMode="decimal" step="0.1" min="0"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        placeholder="0"
-      />
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " placeholder="0" />
     </label>
   );
 }

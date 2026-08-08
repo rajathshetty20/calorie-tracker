@@ -114,9 +114,9 @@ export default function ExerciseChart({
   const pad = Math.max(1, (max - min) * 0.2);
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <section className="border-t border-rule pt-3">
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h2 className="text-sm font-medium text-zinc-500">Exercise</h2>
+        <h2 className="text-[0.8125rem] font-medium text-ink-3">Exercise</h2>
         {aggregationLabel(1, smoothWindow, "session") && (
           <AggregationChip label={aggregationLabel(1, smoothWindow, "session")!} />
         )}
@@ -128,26 +128,23 @@ export default function ExerciseChart({
             <select
               value={selected}
               onChange={(e) => setName(e.target.value)}
-              className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-            >
+ className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-2 py-1.5 text-[0.8125rem] outline-none focus:border-ink " >
               {names.map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
               ))}
             </select>
-            <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 text-xs dark:border-zinc-800">
+            <div className="inline-flex overflow-hidden rounded-lg border border-rule text-[0.75rem]">
               {METRICS.map((m) => (
                 <button
-                  key={m.key}
-                  type="button"
+                  key={m.key} type="button"
                   onClick={() => setMetric(m.key)}
-                  className={`px-2.5 py-1.5 whitespace-nowrap ${
+ className={`px-2.5 py-1.5 whitespace-nowrap ${
                     metric === m.key
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  }`}
-                >
+                      ? "bg-ink text-ground"
+                      : "bg-white text-ink-2 hover:bg-surface-2"
+                  }`} >
                   {m.label}
                 </button>
               ))}
@@ -158,13 +155,13 @@ export default function ExerciseChart({
 
       {names.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-[0.8125rem] text-ink-3">
             No exercises yet — log one on the Today page.
           </p>
         </div>
       ) : data.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-[0.8125rem] text-ink-3">
             No entries for {selected} in this range.
           </p>
         </div>
@@ -183,36 +180,27 @@ export default function ExerciseChart({
                 dataKey="date"
                 tickFormatter={(v: string) => fmtTick(v, range)}
                 {...AXIS_PROPS}
-                {...xTickProps(range)}
-              />
+                {...xTickProps(range)} />
               <YAxis
                 domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
                 width={38}
-                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
-              />
+                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))} />
               <Tooltip content={<ExerciseTooltip metric={metric} smoothing={smoothing} />} />
-              <Area
-                type="monotone"
-                dataKey={smoothing ? "smooth" : "value"}
-                stroke="#8b5cf6"
-                strokeWidth={2.5}
-                fill="url(#exerciseGradient)"
+              <Area type="monotone"
+                dataKey={smoothing ? "smooth" : "value"} stroke="#8b5cf6"
+                strokeWidth={2.5} fill="url(#exerciseGradient)"
                 dot={data.length <= DOT_LIMIT ? { r: 3, fill: "#8b5cf6" } : false}
                 activeDot={{ r: 5, fill: "#8b5cf6", stroke: "var(--chart-surface)", strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
+                isAnimationActive={false} />
               {smoothing && (
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#8b5cf6"
+                <Line type="monotone"
+                  dataKey="value" stroke="#8b5cf6"
                   strokeOpacity={0.28}
                   strokeWidth={1}
                   dot={false}
                   activeDot={false}
-                  isAnimationActive={false}
-                />
+                  isAnimationActive={false} />
               )}
             </ComposedChart>
           </ResponsiveContainer>
@@ -252,12 +240,12 @@ function ExerciseTooltip({
         {metric === "volume" ? "" : " kg"}
       </div>
       {smoothing && (
-        <div className="tabular-nums text-zinc-500">
+        <div className="tabular-nums text-ink-3">
           Trend {row.smooth.toLocaleString()}
           {metric === "volume" ? "" : " kg"}
         </div>
       )}
-      <div className="mt-1 tabular-nums text-zinc-500">
+      <div className="mt-1 tabular-nums text-ink-3">
         {row.sets.map((s, i) => (
           <div key={i}>
             Set {i + 1}: {s.weight_kg}kg × {s.reps}

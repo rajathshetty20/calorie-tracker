@@ -40,7 +40,7 @@ export function ChartHeader({
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-      <h2 className="text-sm font-medium text-zinc-500">{title}</h2>
+      <h2 className="text-[0.8125rem] font-medium text-ink-3">{title}</h2>
       {note && <AggregationChip label={note} />}
       <div className="order-last w-full sm:order-none sm:w-auto">
         <WeekStats avg={avg} std={std} />
@@ -55,7 +55,7 @@ export function ChartHeader({
 // Never let an aggregated chart pass for a raw one.
 export function AggregationChip({ label }: { label: string }) {
   return (
-    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
       {label}
     </span>
   );
@@ -64,19 +64,17 @@ export function AggregationChip({ label }: { label: string }) {
 export function RangeToggle() {
   const { range, setRange } = useRange();
   return (
-    <div className="inline-flex overflow-hidden rounded-md border border-zinc-200 text-xs dark:border-zinc-800">
+    <div className="inline-flex overflow-hidden rounded-lg border border-rule text-[0.75rem]">
       {RANGES.map((r) => (
         <button
-          key={r}
-          type="button"
+          key={r} type="button"
           onClick={() => setRange(r)}
           aria-pressed={range === r}
-          className={`px-2.5 py-1.5 ${
+ className={`px-2.5 py-1.5 ${
             range === r
-              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-              : "bg-white text-zinc-600 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          }`}
-        >
+              ? "bg-ink text-ground"
+              : "bg-white text-ink-2 hover:bg-surface-2"
+          }`} >
           {r}d
         </button>
       ))}
@@ -122,9 +120,9 @@ export function TooltipCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="rounded-lg border border-rule bg-surface px-3 py-2 text-[0.75rem] shadow-sm ">
       <div className="font-medium">{title}</div>
-      {subtitle && <div className="mb-1 text-zinc-500">{subtitle}</div>}
+      {subtitle && <div className="mb-1 text-ink-3">{subtitle}</div>}
       {!subtitle && <div className="mb-1" />}
       {children}
     </div>

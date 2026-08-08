@@ -206,7 +206,7 @@ export default async function HistoryPage({
 
       <header>
         <h1 className="text-2xl font-semibold">History</h1>
-        <p className="text-sm text-zinc-500">Calories, water, weight, exercise, and time.</p>
+        <p className="text-[0.8125rem] text-ink-3">Calories, water, weight, exercise, and time.</p>
       </header>
 
       {/* One range for every chart below: independent toggles made
@@ -217,29 +217,25 @@ export default async function HistoryPage({
             rows={rows}
             target={target}
             avg7={kcalStats.n ? `${Math.round(kcalStats.mean)} kcal` : "—"}
-            std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"}
-          />
+            std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"} />
 
           <WaterChart
             rows={waterRows}
             avg7={waterStats.n ? `${waterStats.mean.toFixed(1)} L` : "—"}
-            std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"}
-          />
+            std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"} />
 
           <WeightChart
             data={weightSeries}
             today={end}
             avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
-            std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
-          />
+            std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"} />
 
           <ExerciseChart rows={exercises} today={end} />
 
           <TimeChart
             rows={timeRows}
             avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
-            std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"}
-          />
+            std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"} />
         </div>
       </RangeProvider>
     </div>

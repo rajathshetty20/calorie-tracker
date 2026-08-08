@@ -2,14 +2,14 @@
 // Values arrive pre-formatted so this stays presentation-only.
 export default function WeekStats({ avg, std }: { avg: string; std: string }) {
   return (
-    <div className="flex gap-4 text-xs">
+    <div className="flex gap-4 text-[0.75rem]">
       <div>
-        <div className="text-zinc-500">7-day avg</div>
-        <div className="font-medium text-zinc-900 tabular-nums dark:text-zinc-100">{avg}</div>
+        <div className="text-ink-3">7-day avg</div>
+        <div className="font-medium text-ink tabular-nums">{avg}</div>
       </div>
       <div>
-        <div className="text-zinc-500">Std dev</div>
-        <div className="font-medium text-zinc-900 tabular-nums dark:text-zinc-100">{std}</div>
+        <div className="text-ink-3">Std dev</div>
+        <div className="font-medium text-ink tabular-nums">{std}</div>
       </div>
     </div>
   );

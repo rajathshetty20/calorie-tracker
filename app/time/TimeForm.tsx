@@ -61,9 +61,7 @@ export default function TimeForm({
   return (
     <form onSubmit={onSubmit} className="space-y-2">
       <div className="relative">
-        <input
-          type="text"
-          placeholder="Category (e.g. sleep)"
+        <input type="text" placeholder="Category (e.g. sleep)"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           onFocus={() => {
@@ -74,21 +72,18 @@ export default function TimeForm({
             blurTimer.current = setTimeout(() => setFocused(false), 120);
           }}
           autoComplete="off"
-          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
+ className="w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
         {focused && matches.length > 0 && (
-          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-lg border border-rule bg-surface shadow-md">
             {matches.map((c) => (
               <li key={c}>
-                <button
-                  type="button"
+                <button type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     setCategory(c);
                     setFocused(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
+ className="w-full px-3 py-2 text-left text-[0.8125rem] hover:bg-surface-2" >
                   {displayCategory(c)}
                 </button>
               </li>
@@ -99,38 +94,32 @@ export default function TimeForm({
 
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
-          <span className="text-xs text-zinc-500">From</span>
-          <input
-            type="datetime-local"
+          <span className="text-[0.75rem] text-ink-3">From</span>
+          <input type="datetime-local"
             value={startLocal}
             onChange={(e) => setStartLocal(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-          />
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-2 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
         </label>
         <label className="block">
-          <span className="text-xs text-zinc-500">To</span>
-          <input
-            type="datetime-local"
+          <span className="text-[0.75rem] text-ink-3">To</span>
+          <input type="datetime-local"
             value={endLocal}
             onChange={(e) => setEndLocal(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-          />
+ className="mt-1 w-full rounded-lg border border-rule bg-surface px-2 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
         </label>
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs tabular-nums text-zinc-500">
+        <span className="text-[0.75rem] tabular-nums text-ink-3">
           {valid ? fmtDuration(minutes) : "—"}
         </span>
-        <button
-          type="submit"
+        <button type="submit"
           disabled={busy || !valid}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
+ className="rounded-lg bg-ink px-4 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
           {busy ? "…" : "Add"}
         </button>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-[0.8125rem] text-over">{error}</p>}
     </form>
   );
 }

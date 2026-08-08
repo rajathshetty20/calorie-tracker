@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import TopBar from "./TopBar";
+import BottomNav from "./BottomNav";
+import { AddSheetProvider } from "./AddSheet";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -39,15 +41,17 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-        <TopBar signedIn={!!user} />
-        <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6">
-          {children}
-        </main>
+    <html lang="en"
+ className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} >
+      <body className="min-h-full bg-ground text-ink">
+        <AddSheetProvider>
+          <TopBar signedIn={!!user} />
+          {/* Bottom padding clears the fixed nav plus the home indicator. */}
+          <main className="mx-auto w-full max-w-3xl px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 md:pb-10">
+            {children}
+          </main>
+          <BottomNav />
+        </AddSheetProvider>
       </body>
     </html>
   );

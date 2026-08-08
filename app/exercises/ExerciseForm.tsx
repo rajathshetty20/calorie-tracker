@@ -17,7 +17,13 @@ function summary(sets: ExerciseSet[]) {
   return sets.map((s) => `${s.weight_kg}×${s.reps}`).join(" · ");
 }
 
-export default function ExerciseForm({ presets = [] }: { presets?: ExercisePreset[] }) {
+export default function ExerciseForm({
+  presets = [],
+  today,
+}: {
+  presets?: ExercisePreset[];
+  today: string; // local date from settings.timezone, not the DB's current_date
+}) {
   const { run, busy, error, setError } = useWrite();
   const [name, setName] = useState("");
   const [rows, setRows] = useState<SetRow[]>([EMPTY_ROW]);
@@ -69,7 +75,9 @@ export default function ExerciseForm({ presets = [] }: { presets?: ExercisePrese
       return;
     }
     const saved = await run(({ supabase, userId }) =>
-      supabase.from("exercises").insert({ id: newId(), user_id: userId, name: trimmed, sets }),
+      supabase
+        .from("exercises")
+        .insert({ id: newId(), user_id: userId, performed_on: today, name: trimmed, sets }),
     );
     if (!saved) return;
     setName("");
@@ -81,9 +89,7 @@ export default function ExerciseForm({ presets = [] }: { presets?: ExercisePrese
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="relative">
-        <input
-          type="text"
-          placeholder="Exercise name"
+        <input type="text" placeholder="Exercise name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onFocus={() => {
@@ -94,23 +100,20 @@ export default function ExerciseForm({ presets = [] }: { presets?: ExercisePrese
             blurTimer.current = setTimeout(() => setFocused(false), 120);
           }}
           autoComplete="off"
-          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-        />
+ className="w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
         {showSuggestions && (
-          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-md border border-zinc-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-auto rounded-lg border border-rule bg-surface shadow-md">
             {matches.map((p) => (
               <li key={p.name}>
-                <button
-                  type="button"
+                <button type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     applyPreset(p);
                     setFocused(false);
                   }}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
+ className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[0.8125rem] hover:bg-surface-2" >
                   <span className="truncate">{p.name}</span>
-                  <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
+                  <span className="shrink-0 text-[0.75rem] text-ink-3 tabular-nums">
                     {summary(p.sets)}
                   </span>
                 </button>
@@ -123,54 +126,38 @@ export default function ExerciseForm({ presets = [] }: { presets?: ExercisePrese
       <div className="space-y-2">
         {rows.map((r, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="w-10 shrink-0 text-xs text-zinc-500 tabular-nums">Set {i + 1}</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.5"
-              min="0"
-              placeholder="Weight (kg)"
+            <span className="w-10 shrink-0 text-[0.75rem] text-ink-3 tabular-nums">Set {i + 1}</span>
+            <input type="number"
+              inputMode="decimal" step="0.5" min="0" placeholder="Weight (kg)"
               value={r.weight}
               onChange={(e) => updateRow(i, { weight: e.target.value })}
-              className="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-            />
-            <input
-              type="number"
-              inputMode="numeric"
-              step="1"
-              min="0"
-              placeholder="Reps"
+ className="w-full min-w-0 rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+            <input type="number"
+              inputMode="numeric" step="1" min="0" placeholder="Reps"
               value={r.reps}
               onChange={(e) => updateRow(i, { reps: e.target.value })}
-              className="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-            />
-            <button
-              type="button"
+ className="w-full min-w-0 rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+            <button type="button"
               onClick={() => removeRow(i)}
               disabled={rows.length === 1}
               aria-label={`Remove set ${i + 1}`}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 disabled:opacity-30 dark:hover:bg-zinc-800"
-            >
+ className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-over disabled:opacity-30" >
               <X className="h-4 w-4" />
             </button>
           </div>
         ))}
       </div>
 
-      <button
-        type="button"
+      <button type="button"
         onClick={addRow}
-        className="w-full rounded-md border border-dashed border-zinc-300 px-3 py-2 text-sm text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 dark:border-zinc-700 dark:hover:border-zinc-600 dark:hover:text-zinc-300"
-      >
+ className="w-full rounded-lg border border-dashed border-rule px-3 py-2 text-[0.8125rem] text-ink-3 hover:border-rule hover:text-zinc-700 dark:hover:border-zinc-600" >
         + Add set
       </button>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
+      {error && <p className="text-[0.8125rem] text-over">{error}</p>}
+      <button type="submit"
         disabled={busy}
-        className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-      >
+ className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
         {busy ? "Logging..." : "Log exercise"}
       </button>
     </form>

@@ -1,53 +1,142 @@
 @import "tailwindcss";
 
+/*
+  "Refined instrument": a measuring tool you open fifteen times a day, so it
+  gets out of the way. Cards dissolve into hairline-separated groups, one
+  accent carries every live/primary state, and the five domain colours are
+  demoted to identifiers — 8px dots and 2px underlines, never fills.
+
+  Neutrals carry a slight green-blue bias so they sit with the accent instead
+  of beside it; pure zinc read as unchosen.
+*/
 :root {
-  --background: #fafafa;
-  --foreground: #18181b;
+  --ground: #fcfcfd;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --rule: #e6e7ea;
+  --rule-soft: #eff0f2;
+
+  --ink: #16191d;
+  --ink-2: #5b6270;
+  --ink-3: #878e9b;
+
+  --accent: #0f9d6e;
+  --accent-ink: #0b7f59;
+  --accent-soft: #e8f7f1;
+  --over: #e11d48;
+
+  /* Domain identifiers. One colour means one thing everywhere: timeline
+     dots, tile underlines, chart series, the running-timer bar. */
+  --food: #b45309;
+  --water: #0369a1;
+  --weight: #047857;
+  --exercise: #6d28d9;
+  --time: #be123c;
+
   /* Chart theming (used by Recharts inline styles / SVG strokes). */
   --chart-surface: #ffffff;
-  --chart-grid: #e4e4e7;
-  --chart-cursor: rgba(0, 0, 0, 0.04);
-  /* Categorical series colors, fixed assignment order (CVD/contrast validated). */
-  --cat-1: #0ea5e9;
-  --cat-2: #f59e0b;
-  --cat-3: #8b5cf6;
-  --cat-4: #10b981;
-  --cat-5: #f43f5e;
-  --cat-6: #06b6d4;
-  --cat-7: #f97316;
-  --cat-8: #a855f7;
-  --cat-other: #a1a1aa;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --chart-grid: #e6e7ea;
+  --chart-cursor: rgba(22, 25, 29, 0.04);
+  /* Categorical series, fixed assignment order (CVD/contrast validated). */
+  --cat-1: #0369a1;
+  --cat-2: #b45309;
+  --cat-3: #6d28d9;
+  --cat-4: #047857;
+  --cat-5: #be123c;
+  --cat-6: #0891b2;
+  --cat-7: #ea580c;
+  --cat-8: #9333ea;
+  --cat-other: #878e9b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #09090b;
-    --foreground: #f4f4f5;
-    --chart-surface: #18181b; /* zinc-900 */
-    --chart-grid: #27272a; /* zinc-800 */
-    --chart-cursor: rgba(255, 255, 255, 0.06);
-    /* Darker steps of the same hues, validated against the dark surface. */
-    --cat-1: #0284c7;
-    --cat-2: #d97706;
-    --cat-3: #8b5cf6;
-    --cat-4: #059669;
-    --cat-5: #f43f5e;
-    --cat-6: #0891b2;
-    --cat-7: #ea580c;
-    --cat-8: #a855f7;
-    --cat-other: #71717a;
+    --ground: #0b0c0e;
+    --surface: #141619;
+    --surface-2: #1b1e22;
+    --rule: #24272c;
+    --rule-soft: #1c1f23;
+
+    --ink: #e9ebee;
+    --ink-2: #a3aab5;
+    --ink-3: #737b87;
+
+    --accent: #34d399;
+    --accent-ink: #6ee7b7;
+    --accent-soft: #0d2b22;
+    --over: #fb7185;
+
+    --food: #f0a63a;
+    --water: #4cabe8;
+    --weight: #34d399;
+    --exercise: #a78bfa;
+    --time: #fb7185;
+
+    --chart-surface: #141619;
+    --chart-grid: #24272c;
+    --chart-cursor: rgba(233, 235, 238, 0.06);
+    --cat-1: #4cabe8;
+    --cat-2: #f0a63a;
+    --cat-3: #a78bfa;
+    --cat-4: #34d399;
+    --cat-5: #fb7185;
+    --cat-6: #22b8cf;
+    --cat-7: #fb923c;
+    --cat-8: #c084fc;
+    --cat-other: #737b87;
   }
 }
 
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-rule: var(--rule);
+  --color-rule-soft: var(--rule-soft);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-over: var(--over);
+  --color-food: var(--food);
+  --color-water: var(--water);
+  --color-weight: var(--weight);
+  --color-exercise: var(--exercise);
+  --color-time: var(--time);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Four sizes, two weights — the whole scale. */
+  --text-hero: 2.5rem;
+  --text-title: 1.75rem;
+  --text-body: 1rem;
+  --text-label: 0.8125rem;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--ground);
+  color: var(--ink);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Digits line up in every column without needing to be asked. */
+.tnum,
+table,
+input[type="number"],
+input[type="datetime-local"],
+input[type="date"] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

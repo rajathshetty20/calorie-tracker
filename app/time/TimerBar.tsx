@@ -46,25 +46,21 @@ export default function TimerBar({ timer }: { timer: RunningTimer }) {
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-emerald-900 dark:text-emerald-100">
+          <div className="truncate text-[0.8125rem] font-medium text-emerald-900 dark:text-emerald-100">
             {displayCategory(timer.category)}
           </div>
-          {error && <div className="truncate text-xs text-red-600">{error}</div>}
+          {error && <div className="truncate text-[0.75rem] text-over">{error}</div>}
         </div>
 
         <span
-          className="shrink-0 text-lg font-semibold tabular-nums text-emerald-900 dark:text-emerald-100"
-          aria-live="off"
-        >
+ className="shrink-0 text-lg font-semibold tabular-nums text-emerald-900 dark:text-emerald-100" aria-live="off" >
           {pending ? `−${fmtClock(elapsed)}` : fmtClock(elapsed)}
         </span>
 
-        <button
-          type="button"
+        <button type="button"
           onClick={stop}
           disabled={busy}
-          className="flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-        >
+ className="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[0.75rem] font-medium text-ground hover:bg-emerald-700 disabled:opacity-60" >
           <Square className="h-3 w-3 fill-current" />
           Stop
         </button>

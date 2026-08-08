@@ -68,80 +68,67 @@ export default function TimeEntryRow({
   return (
     <li className="py-2">
       <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
+        <button type="button"
           onClick={() => setEditing((v) => !v)}
           aria-expanded={editing}
-          className="min-w-0 flex-1 text-left"
-        >
-          <div className="text-sm">{displayCategory(entry.category)}</div>
-          <div className="text-xs text-zinc-500 tabular-nums">
+ className="min-w-0 flex-1 text-left" >
+          <div className="text-[0.8125rem]">{displayCategory(entry.category)}</div>
+          <div className="text-[0.75rem] text-ink-3 tabular-nums">
             {localTimeHHMM(originalStart, timeZone)} → {localTimeHHMM(originalEnd, timeZone)}
             {crossesMidnight && (
               <span
-                className="ml-1.5 rounded bg-zinc-100 px-1 py-px text-[10px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                title="Crosses midnight — counted against both days"
-              >
+ className="ml-1.5 rounded bg-surface-2 px-1 py-px text-[10px] font-medium text-ink-2" title="Crosses midnight — counted against both days" >
                 +1d
               </span>
             )}
           </div>
         </button>
-        <span className="shrink-0 text-sm text-zinc-500 tabular-nums">
+        <span className="shrink-0 text-[0.8125rem] text-ink-3 tabular-nums">
           {fmtDuration(spanMinutes(originalStart, originalEnd))}
         </span>
       </div>
 
       {editing && (
-        <div className="mt-2 space-y-3 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
-          <Field
-            label="Start"
+        <div className="mt-2 space-y-3 rounded-lg border border-rule p-3">
+          <Field label="Start"
             iso={startIso}
             timeZone={timeZone}
-            onChange={setStartIso}
-          />
+            onChange={setStartIso} />
           <Field label="End" iso={endIso} timeZone={timeZone} onChange={setEndIso} />
 
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-zinc-200 pt-2 text-xs dark:border-zinc-800">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-rule pt-2 text-[0.75rem]">
             <span className="font-medium tabular-nums">
               {valid ? fmtDuration(minutes) : "End must be after start"}
             </span>
             {crossesMidnight && (
-              <span className="text-zinc-500 tabular-nums">
+              <span className="text-ink-3 tabular-nums">
                 {slices.map((s) => `${s.date.slice(5)} ${fmtDuration(s.minutes)}`).join(" · ")}
               </span>
             )}
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-[0.8125rem] text-over">{error}</p>}
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <button type="button"
               onClick={save}
               disabled={busy || !valid}
-              className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-            >
+ className="rounded-lg bg-ink px-3 py-1.5 text-[0.8125rem] font-medium text-ground hover:bg-zinc-800 disabled:opacity-50" >
               Save
             </button>
-            <button
-              type="button"
+            <button type="button"
               onClick={() => {
                 setStartIso(entry.started_at);
                 setEndIso(entry.ended_at ?? entry.started_at);
                 setEditing(false);
               }}
-              className="rounded-md px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
+ className="rounded-lg px-3 py-1.5 text-[0.8125rem] text-ink-2 hover:bg-surface-2" >
               Cancel
             </button>
-            <button
-              type="button"
+            <button type="button"
               onClick={remove}
-              disabled={busy}
-              aria-label="Delete entry"
-              className="ml-auto rounded-md p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
-            >
+              disabled={busy} aria-label="Delete entry"
+ className="ml-auto rounded-lg p-1.5 text-ink-3 hover:bg-red-50 hover:text-over disabled:opacity-50 dark:hover:bg-red-950/30" >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
@@ -172,26 +159,22 @@ function Field({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="w-10 shrink-0 text-xs text-zinc-500">{label}</span>
-      <input
-        type="datetime-local"
+      <span className="w-10 shrink-0 text-[0.75rem] text-ink-3">{label}</span>
+      <input type="datetime-local"
         value={`${date}T${time}`}
         onChange={(e) => {
           const [d, t] = e.target.value.split("T");
           if (d && t) onChange(instantFromLocal(d, t.slice(0, 5), timeZone).toISOString());
         }}
         aria-label={`${label} time`}
-        className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
-      />
-      <span className="inline-flex overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700">
+ className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-2 py-1.5 text-[0.8125rem] tabular-nums outline-none focus:border-ink " />
+      <span className="inline-flex overflow-hidden rounded-lg border border-rule">
         {NUDGES.map((n) => (
           <button
-            key={n}
-            type="button"
+            key={n} type="button"
             onClick={() => nudge(n)}
             aria-label={`${label} ${n > 0 ? "later" : "earlier"} by ${Math.abs(n)} minutes`}
-            className="flex items-center gap-0.5 px-1.5 py-1 text-[11px] tabular-nums text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
+ className="flex items-center gap-0.5 px-1.5 py-1 text-[11px] tabular-nums text-ink-2 hover:bg-surface-2" >
             {n > 0 ? <Plus className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
             {Math.abs(n)}
           </button>

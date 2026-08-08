@@ -68,17 +68,15 @@ export default function WeightChart({
   const pad = Math.max(1, (max - min) * 0.2);
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <ChartHeader
-        title="Weight"
+    <section className="border-t border-rule pt-3">
+      <ChartHeader title="Weight"
         avg={avg7}
         std={std7}
-        note={aggregationLabel(1, smoothWindow)}
-      />
+        note={aggregationLabel(1, smoothWindow)} />
 
       {data.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-[0.8125rem] text-ink-3">
             No entries in this range — log your weight on the Today page.
           </p>
         </div>
@@ -97,38 +95,29 @@ export default function WeightChart({
                 dataKey="date"
                 tickFormatter={(v: string) => fmtTick(v, range)}
                 {...AXIS_PROPS}
-                {...xTickProps(range)}
-              />
+                {...xTickProps(range)} />
               <YAxis
                 domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
-                width={38}
-              />
+                width={38} />
               <Tooltip content={<WeightTooltip smoothing={smoothing} />} />
 
               {/* The filled series is whichever one is the headline: the raw
                   readings when they fit, the trend when they don't. */}
-              <Area
-                type="monotone"
-                dataKey={smoothing ? "smooth" : "kg"}
-                stroke="#10b981"
-                strokeWidth={2.5}
-                fill="url(#weightGradient)"
+              <Area type="monotone"
+                dataKey={smoothing ? "smooth" : "kg"} stroke="#10b981"
+                strokeWidth={2.5} fill="url(#weightGradient)"
                 dot={data.length <= DOT_LIMIT ? { r: 3, fill: "#10b981" } : false}
                 activeDot={{ r: 5, fill: "#10b981", stroke: "var(--chart-surface)", strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
+                isAnimationActive={false} />
               {smoothing && (
-                <Line
-                  type="monotone"
-                  dataKey="kg"
-                  stroke="#10b981"
+                <Line type="monotone"
+                  dataKey="kg" stroke="#10b981"
                   strokeOpacity={0.28}
                   strokeWidth={1}
                   dot={false}
                   activeDot={false}
-                  isAnimationActive={false}
-                />
+                  isAnimationActive={false} />
               )}
             </ComposedChart>
           </ResponsiveContainer>
@@ -157,7 +146,7 @@ function WeightTooltip({
     <TooltipCard title={fmtFullDate(label)}>
       <div className="tabular-nums">{row.kg} kg</div>
       {smoothing && (
-        <div className="tabular-nums text-zinc-500">Trend {row.smooth} kg</div>
+        <div className="tabular-nums text-ink-3">Trend {row.smooth} kg</div>
       )}
     </TooltipCard>
   );
