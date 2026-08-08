@@ -82,11 +82,27 @@ function pick<T>(rnd: () => number, arr: T[]): T {
 
 export function demoData() {
   const rnd = mulberry32(20260718);
-  // Nothing on today may lie in the future. The generator lays out a whole
-  // day at fixed clock times, so before this a visitor at 04:00 saw a meal
-  // eaten at 08:30 and a gym session at 19:00 that had not happened — and the
-  // running timer sat above them instead of being the most recent thing.
+  // Nothing on today may lie in the future: a visitor at 04:00 was shown a
+  // meal eaten at 08:30 and a gym session at 19:00 that had not happened, and
+  // the running timer sat above them instead of being the most recent entry.
+  //
+  // Simply dropping future events left the demo nearly empty in the small
+  // hours, so today's schedule is instead COMPRESSED into the part of the day
+  // that has elapsed. The day always has content, always in the right order,
+  // and never ahead of the clock.
   const nowMs = Date.now();
+  const todayISO = localDateISO(new Date(nowMs), DEMO_TIME_ZONE);
+  const elapsedToday = Math.max(
+    1,
+    (nowMs - instantFromLocal(todayISO, "00:00", DEMO_TIME_ZONE).getTime()) / 60_000,
+  );
+  // 1 late in the evening, small in the early hours.
+  const squeeze = Math.min(1, elapsedToday / 1440);
+  // Finished activity stops here, leaving a clear gap before the live timer.
+  const finishedBy = nowMs - 22 * 60_000;
+  const compress = (minutes: number) => Math.round(minutes * squeeze);
+  const hhmm = (minutes: number) =>
+    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
   const meals: Meal[] = [];
   const water: Water[] = [];
   const weights: Weight[] = [];
@@ -109,12 +125,18 @@ export function demoData() {
       const mm = String(within % 60).padStart(2, "0");
       return atZone(addDaysISO(dateISO, dayOffset), `${hh}:${mm}`);
     };
+    const duration = endMin - startMin;
+    if (dateISO === todayISO) {
+      startMin = compress(startMin);
+      endMin = startMin + duration;
+    }
     const startedAt = toStamp(startMin);
-    if (Date.parse(startedAt) >= nowMs) return; // hasn't begun yet
+    if (Date.parse(startedAt) >= finishedBy) return; // hasn't begun yet
     // An interval still in progress is truncated to now rather than dropped,
     // so last night's sleep still demonstrates the midnight split.
     const rawEnd = toStamp(endMin);
-    const endedAt = Date.parse(rawEnd) > nowMs ? new Date(nowMs).toISOString() : rawEnd;
+    const endedAt =
+      Date.parse(rawEnd) > finishedBy ? new Date(finishedBy).toISOString() : rawEnd;
     if (Date.parse(endedAt) <= Date.parse(startedAt)) return;
     timeEntries.push({
       id: `demo-time-${id}`,
@@ -139,7 +161,11 @@ export function demoData() {
     const at = (time: string) => atZone(date, time);
 
     const addMeal = (t: MealTemplate, time: string) => {
-      if (Date.parse(at(time)) > nowMs) return;
+      if (isToday) {
+        const [h, m] = time.split(":").map(Number);
+        time = hhmm(compress(h * 60 + m));
+      }
+      if (Date.parse(at(time)) > finishedBy) return;
       meals.push({
         id: `demo-meal-${date}-${time}`,
         user_id: DEMO_USER,
@@ -179,8 +205,9 @@ export function demoData() {
     if (trains) {
       const plan = WORKOUTS[workout % WORKOUTS.length];
       workout++;
+      const liftedAt = isToday ? hhmm(compress(18 * 60 + 30)) : "18:30";
       for (const ex of plan) {
-        if (Date.parse(at("18:30")) > nowMs) break; // session not done yet
+        if (Date.parse(at(liftedAt)) > finishedBy) break;
         const kg = Math.round((ex.base + i * 0.07) / 2.5) * 2.5;
         const nSets = 3 + (rnd() < 0.5 ? 1 : 0);
         exercises.push({
@@ -192,7 +219,7 @@ export function demoData() {
             weight_kg: kg,
             reps: 8 + Math.floor(rnd() * 4),
           })),
-          created_at: at("18:30"),
+          created_at: at(liftedAt),
         });
       }
       const gymStart = 18 * 60 + 30 + Math.floor(rnd() * 5) * 15;
@@ -222,9 +249,9 @@ export function demoData() {
     }
   }
 
-  // One live timer, so a visitor actually sees the running bar and its dial.
-  // Started 2h 20m ago and still going.
-  const liveStart = new Date(Date.now() - 140 * 60_000).toISOString();
+  // One live timer, so a visitor sees the running bar and its dial. It starts
+  // after everything else finished, so "running" reads as the newest entry.
+  const liveStart = new Date(nowMs - 18 * 60_000).toISOString();
   timeEntries.push({
     id: "demo-time-live",
     user_id: DEMO_USER,
