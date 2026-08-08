@@ -9,6 +9,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  // Mail providers scan links, and a scan spends a single-use magic link
+  // before you ever click it. The emailed 6-digit code is not a URL, so
+  // nothing can consume it on your behalf.
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  async function onVerify(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setVerifying(true);
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code.trim(),
+      type: "email",
+    });
+    setVerifying(false);
+    if (error) {
+      setStatus("error");
+      setError(error.message);
+      return;
+    }
+    window.location.assign("/");
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,7 +74,30 @@ export default function LoginPage() {
           {status === "sending" ? "Sending..." : "Send link"}
         </button>
         {status === "sent" && (
-          <p className="text-[0.8125rem] text-emerald-600">Check your inbox for the link.</p>
+          <div className="space-y-2 rounded-lg border border-rule p-3">
+            <p className="text-[0.8125rem] text-emerald-600">
+              Check your inbox. Open the link, or enter the code from the same email.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="6-digit code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-3 py-2 tabular-nums outline-none focus:border-ink"
+              />
+              <button
+                type="button"
+                onClick={(e) => onVerify(e as unknown as React.FormEvent<HTMLFormElement>)}
+                disabled={verifying || code.length < 6}
+                className="shrink-0 rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40"
+              >
+                {verifying ? "…" : "Sign in"}
+              </button>
+            </div>
+          </div>
         )}
         {status === "error" && error && (
           <p className="text-[0.8125rem] text-over">{error}</p>

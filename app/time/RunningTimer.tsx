@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { demoData } from "@/lib/demo-data";
 import TimerBar, { type RunningTimer as Running } from "./TimerBar";
@@ -10,6 +11,11 @@ import TimerBar, { type RunningTimer as Running } from "./TimerBar";
  * you end up with a "work" entry that ran all night.
  */
 export default async function RunningTimer() {
+  // The login screen stands alone; a demo timer above the sign-in form is
+  // confusing and belongs to a session the visitor does not have.
+  const path = (await headers()).get("x-pathname") ?? "";
+  if (path.startsWith("/login")) return null;
+
   const supabase = await createClient();
   const {
     data: { user },

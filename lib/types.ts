@@ -113,8 +113,9 @@ export function displayCategory(category: string) {
 
 export type WeightPoint = { date: string; kg: number };
 
-// Change between the most recent weigh-in and the nearest one at least a week
-// older. Null when there isn't enough history to say anything honest.
+// Change between the most recent weigh-in on or before `asOf` and the nearest
+// one at least seven days older — i.e. "how much have I moved since roughly a
+// week ago", not a rolling weekly average. Null without enough history.
 export function weeklyDelta(points: WeightPoint[], asOf?: string): number | null {
   if (points.length < 2) return null;
   const sorted = [...points]

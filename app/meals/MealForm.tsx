@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import { newId, useWrite } from "../useWrite";
-import { SignInToSave, useIsDemo } from "../DemoContext";
 
 export type MealPreset = {
   name: string;
@@ -24,7 +23,6 @@ export default function MealForm({
   onSaved?: () => void;
 }) {
   const { run, busy, error, setError } = useWrite();
-  const isDemo = useIsDemo();
   const [name, setName] = useState("");
   const [carbs, setCarbs] = useState("");
   const [protein, setProtein] = useState("");
@@ -119,15 +117,11 @@ export default function MealForm({
         <NumField label="Fat (g)" value={fat} onChange={setFat} />
       </div>
       {error && <p className="text-[0.8125rem] text-over">{error}</p>}
-      {isDemo ? (
-        <SignInToSave label="Sign in to save" className="w-full" />
-      ) : (
-        <button type="submit"
+      <button type="submit"
           disabled={busy}
    className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
           {busy ? "Adding..." : "Add meal"}
         </button>
-      )}
     </form>
   );
 }

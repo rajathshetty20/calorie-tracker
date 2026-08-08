@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 import { displayCategory, fmtDuration } from "@/lib/types";
 import { instantFromLocal, localDateISO, localTimeHHMM, spanMinutes } from "@/lib/time";
 import { useWrite } from "../useWrite";
-import { SignInToSave, useIsDemo } from "../DemoContext";
 
 /**
  * Manual backfill for time you didn't run a stopwatch for. It produces the
@@ -21,7 +20,6 @@ export default function TimeForm({
   onSaved?: () => void;
 }) {
   const { run, busy, error, setError } = useWrite();
-  const isDemo = useIsDemo();
   const [category, setCategory] = useState("");
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -120,15 +118,11 @@ export default function TimeForm({
         <span className="text-[0.75rem] tabular-nums text-ink-3">
           {valid ? fmtDuration(minutes) : "—"}
         </span>
-        {isDemo ? (
-          <SignInToSave label="Sign in to save" className="" />
-        ) : (
-          <button type="submit"
+        <button type="submit"
             disabled={busy || !valid}
    className="rounded-lg bg-ink px-4 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
             {busy ? "…" : "Add"}
           </button>
-        )}
       </div>
       {error && <p className="text-[0.8125rem] text-over">{error}</p>}
     </form>

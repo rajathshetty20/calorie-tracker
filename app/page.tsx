@@ -208,7 +208,7 @@ export default async function HomePage({
               sub={
                 dayWeight !== null
                   ? trend !== null
-                    ? `${trend > 0 ? "+" : trend < 0 ? "−" : "±"}${Math.abs(trend).toFixed(1)} kg this week`
+                    ? `${trend > 0 ? "+" : trend < 0 ? "−" : "±"}${Math.abs(trend).toFixed(1)} kg vs a week ago`
                     : "logged"
                   : priorWeight !== null
                     ? `last: ${priorWeight} kg`
