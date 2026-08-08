@@ -5,12 +5,18 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Logo from "../Logo";
 
+// Supabase generates the email OTP at a length set per project (6-10 digits),
+// so neither bound is ours to hardcode. This input used to slice to 6, which
+// turned a valid 8-digit code into a wrong one and failed every sign-in.
+const OTP_MIN = 6;
+const OTP_MAX = 10;
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   // Mail providers scan links, and a scan spends a single-use magic link
-  // before you ever click it. The emailed 6-digit code is not a URL, so
+  // before you ever click it. The emailed code is not a URL, so
   // nothing can consume it on your behalf.
   const [code, setCode] = useState("");
   // The callback redirects here with ?error= when a link cannot be redeemed,
@@ -83,8 +89,8 @@ export default function LoginPage() {
             <p className="font-medium text-over">That sign-in link didn&apos;t work.</p>
             <p className="text-ink-2">
               Links can only be opened in the browser that asked for them, and mail apps often
-              open their own. Request a new one below and use the <strong>6-digit code</strong> from
-              the email instead — it works anywhere.
+              open their own. Request a new one below and use the <strong>code</strong> from the
+              email instead — it works anywhere.
             </p>
           </div>
         )}
@@ -99,15 +105,15 @@ export default function LoginPage() {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                placeholder="6-digit code"
+                placeholder="Code from the email"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, OTP_MAX))}
                 className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-3 py-2 tabular-nums outline-none focus:border-ink"
               />
               <button
                 type="button"
                 onClick={(e) => onVerify(e as unknown as React.FormEvent<HTMLFormElement>)}
-                disabled={verifying || code.length < 6}
+                disabled={verifying || code.length < OTP_MIN}
                 className="shrink-0 rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40"
               >
                 {verifying ? "…" : "Sign in"}
