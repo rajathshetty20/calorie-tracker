@@ -31,7 +31,7 @@ export function RangeHeadline({ series }: { series: Series }) {
   const { range } = useRange();
   const [stat] = useRangeStats([series]);
   return (
-    <div className="flex gap-4 text-[0.75rem]">
+    <div className="flex gap-4 text-[0.6875rem]">
       <div>
         <div className="text-ink-3">{range}-day avg</div>
         <div className="font-medium text-ink tabular-nums">{stat.avg}</div>
@@ -59,7 +59,7 @@ export function CategoryStats({
   const shown = stats.filter((s) => s.n > 0);
   if (shown.length === 0) return null;
   return (
-    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-rule-soft pt-2 text-[0.75rem] sm:grid-cols-3">
+    <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 border-t border-rule-soft pt-2 text-[0.75rem] sm:grid-cols-3">
       {shown.map((s) => (
         <div key={s.label} className="flex items-baseline gap-1.5">
           <span

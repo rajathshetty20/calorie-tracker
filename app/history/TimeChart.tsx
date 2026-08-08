@@ -12,7 +12,6 @@ import {
 } from "recharts";
 import { displayCategory, fmtDuration } from "@/lib/types";
 import {
-  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   CHART_CURSOR,
@@ -106,6 +105,7 @@ export default function TimeChart({ rows }: { rows: TimeDay[] }) {
     <section className="border-t border-rule pt-3">
       <ChartHeader
         title="Time"
+        unit="hours"
         stats={
           <RangeHeadline
             series={{
@@ -138,8 +138,7 @@ export default function TimeChart({ rows }: { rows: TimeDay[] }) {
                 <YAxis
                   {...AXIS_PROPS}
                   width={38}
-                  tickFormatter={(v: number) => String(Math.round((v / 60) * 10) / 10)}
-                  label={axisLabel("hours")} />
+                  tickFormatter={(v: number) => String(Math.round((v / 60) * 10) / 10)} />
                 <Tooltip cursor={CHART_CURSOR} content={<TimeTooltip series={series} />} />
                 {series.map((s, i) => (
                   <Bar

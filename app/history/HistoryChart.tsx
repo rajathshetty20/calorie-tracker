@@ -12,7 +12,6 @@ import {
   YAxis,
 } from "recharts";
 import {
-  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   CHART_CURSOR,
@@ -29,6 +28,7 @@ import {
   bucketDays,
   bucketSizeFor,
   meanOverLogged,
+  niceTicks,
   PX_PER_BAR,
   useMaxPoints,
 } from "./series";
@@ -74,10 +74,15 @@ export default function HistoryChart({ rows, target }: { rows: DayRow[]; target:
     [windowed, bucketSize],
   );
 
+  // The axis must reach the target so the reference line is inside the plot.
+  const peak = Math.max(target, ...data.map((d) => d.total_kcal), 0);
+  const axis = niceTicks(peak * 1.02);
+
   return (
     <section className="border-t border-rule pt-3">
       <ChartHeader
         title="Calories"
+        unit="kcal"
         stats={
           <RangeHeadline
             series={{
@@ -104,9 +109,9 @@ export default function HistoryChart({ rows, target }: { rows: DayRow[]; target:
               <YAxis
                 {...AXIS_PROPS}
                 width={46}
-                domain={[0, (dataMax: number) => Math.ceil(Math.max(dataMax, target) * 1.08)]}
+                domain={axis.domain}
+                ticks={axis.ticks}
                 tickFormatter={(v: number) => (v >= 1000 ? `${v / 1000}k` : String(v))}
-                label={axisLabel("kcal")}
               />
             <Tooltip cursor={CHART_CURSOR} content={<MacroTooltip />} />
             <ReferenceLine y={target} stroke="var(--ink-3)" strokeDasharray="4 4" ifOverflow="visible" />

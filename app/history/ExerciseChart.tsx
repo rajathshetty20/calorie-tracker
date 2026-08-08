@@ -21,7 +21,6 @@ import {
 } from "@/lib/types";
 import {
   AggregationChip,
-  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   fmtFullDate,
@@ -116,7 +115,9 @@ export default function ExerciseChart({
   return (
     <section className="border-t border-rule pt-3">
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h2 className="text-[0.8125rem] font-medium text-ink-3">Exercise</h2>
+        <h2 className="text-[0.8125rem] font-medium text-ink-3">
+          Exercise <span>({metric === "volume" ? "kg total" : "kg"})</span>
+        </h2>
         {aggregationLabel(1, smoothWindow, "session") && (
           <AggregationChip label={aggregationLabel(1, smoothWindow, "session")!} />
         )}
@@ -176,8 +177,7 @@ export default function ExerciseChart({
                 domain={metric === "volume" ? [0, "auto"] : [Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
                 width={46}
-                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
-                label={axisLabel(metric === "volume" ? "kg total" : "kg")} />
+                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))} />
               <Tooltip content={<ExerciseTooltip metric={metric} smoothing={smoothing} />} />
               {/* Volume is a quantity accumulated in a session, so it gets bars
                   from a zero baseline. Top set and 1RM are levels, not totals,

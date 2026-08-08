@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { axisLabel, AXIS_PROPS, CHART_BODY, fmtFullDate, fmtTick, TooltipCard, xTickProps } from "./chartParts";
+import { AXIS_PROPS, CHART_BODY, fmtFullDate, fmtTick, TooltipCard, xTickProps } from "./chartParts";
 import { useRange } from "./RangeContext";
 
 type Point = { date: string; kcal: number | null; kg: number | null };
@@ -108,7 +108,6 @@ export default function CaloriesWeightChart({
                   tick={{ ...AXIS_PROPS.tick, fill: "var(--food)" }}
                   width={50}
                   domain={[0, "auto"]}
-                  label={axisLabel("kcal", "var(--food)")}
                 />
                 <YAxis
                   yAxisId="kg"
@@ -116,11 +115,8 @@ export default function CaloriesWeightChart({
                   {...AXIS_PROPS}
                   tick={{ ...AXIS_PROPS.tick, fill: "var(--weight)" }}
                   width={44}
-                  label={axisLabel("kg", "var(--weight)", "right")}
-                  domain={[
-                    Math.floor((kgMin - pad) * 10) / 10,
-                    Math.ceil((kgMax + pad) * 10) / 10,
-                  ]}
+                  domain={[Math.floor(kgMin - pad), Math.ceil(kgMax + pad)]}
+                  allowDecimals={false}
                 />
                 <Tooltip content={<BothTooltip />} />
                 <Line
@@ -149,8 +145,8 @@ export default function CaloriesWeightChart({
             </ResponsiveContainer>
           </div>
           <div className="mt-3 flex flex-wrap gap-3 text-[0.75rem] text-ink-3">
-            <Key color="var(--food)" label="Calories / day — left axis" />
-            <Key color="var(--weight)" label="Weight — right axis" />
+            <Key color="var(--food)" label="Calories/day, kcal — left" />
+            <Key color="var(--weight)" label="Weight, kg — right" />
           </div>
         </>
       )}

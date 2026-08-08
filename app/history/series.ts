@@ -195,3 +195,21 @@ export function aggregationLabel(
   if (smoothWindow > 1) return `${smoothWindow}-${unit} group`;
   return null;
 }
+
+/**
+ * A domain and tick list that land on readable numbers.
+ *
+ * Letting the chart divide an arbitrary maximum produced ticks like 650 and
+ * 1.95k. This picks a step from 1/2/2.5/5/10 × a power of ten, so the labels
+ * are always numbers a reader recognises.
+ */
+export function niceTicks(max: number, count = 5): { domain: [number, number]; ticks: number[] } {
+  if (!(max > 0)) return { domain: [0, 1], ticks: [0, 1] };
+  const raw = max / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? 10 * mag;
+  return {
+    domain: [0, step * count],
+    ticks: Array.from({ length: count + 1 }, (_, i) => i * step),
+  };
+}

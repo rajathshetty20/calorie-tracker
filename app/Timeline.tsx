@@ -1,3 +1,9 @@
+"use client";
+
+// A client component so rows can hand their editor down as a render function.
+// Passing a function from a Server Component to a Client Component is a
+// runtime error that typecheck, lint and build all miss — only loading the
+// page surfaces it.
 import { localTimeHHMM } from "@/lib/time";
 import {
   displayCategory,

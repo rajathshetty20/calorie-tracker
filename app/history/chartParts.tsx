@@ -23,43 +23,32 @@ export const AXIS_PROPS = {
 
 export const CHART_CURSOR = { fill: "var(--chart-cursor)" } as const;
 
-/**
- * Axis unit label. Every axis should say what it measures — bare numbers on
- * a calorie or weight axis leave the reader to guess the unit.
- */
-export function axisLabel(
-  value: string,
-  fill = "rgb(113 113 122)",
-  position: "left" | "right" = "left",
-) {
-  return {
-    value,
-    angle: -90,
-    position: position === "left" ? ("insideLeft" as const) : ("insideRight" as const),
-    style: { fontSize: 10, fill, textAnchor: "middle" as const },
-    offset: position === "left" ? 4 : 0,
-  };
-}
 
 // Header that keeps title + range toggle on one row and lets the weekly
 // stats wrap to their own line on narrow screens.
 export function ChartHeader({
   title,
+  unit,
   stats,
   note,
 }: {
   title: string;
+  /** Unit of the Y axis, shown beside the title so no axis text is rotated. */
+  unit?: string;
   /** Summary for the selected window, not a fixed 7 days. */
   stats?: React.ReactNode;
   /** Aggregation label, shown only when the chart isn't plotting raw days. */
   note?: string | null;
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-      <h2 className="text-[0.8125rem] font-medium text-ink-3">{title}</h2>
+    <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+      <h2 className="text-[0.8125rem] font-medium text-ink-3">
+        {title}
+        {unit && <span className="ml-1 text-ink-3">({unit})</span>}
+      </h2>
       {note && <AggregationChip label={note} />}
       {/* The range control belongs to ChartSwitcher now — one per page. */}
-      <div className="ml-auto">{stats}</div>
+      <div className="w-full sm:ml-auto sm:w-auto">{stats}</div>
     </div>
   );
 }
@@ -128,6 +117,8 @@ export function TooltipCard({
   children,
 }: {
   title: string;
+  /** Unit of the Y axis, shown beside the title so no axis text is rotated. */
+  unit?: string;
   subtitle?: string | null;
   children: React.ReactNode;
 }) {

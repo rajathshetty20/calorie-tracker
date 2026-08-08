@@ -12,7 +12,6 @@ import {
 } from "recharts";
 import { format, parseISO, subDays } from "date-fns";
 import {
-  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   ChartHeader,
@@ -71,6 +70,7 @@ export default function WeightChart({
     <section className="border-t border-rule pt-3">
       <ChartHeader
         title="Weight"
+        unit="kg"
         stats={
           <RangeHeadline
             series={{
@@ -102,8 +102,7 @@ export default function WeightChart({
               <YAxis
                 domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
-                width={44}
-                label={axisLabel("kg")} />
+                width={44} />
               <Tooltip content={<WeightTooltip smoothing={smoothing} />} />
 
               {/* A line, not an area. An area fill measures down to the axis
