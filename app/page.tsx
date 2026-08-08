@@ -19,7 +19,6 @@ import DateStrip from "./DateStrip";
 import DemoBanner from "./DemoBanner";
 import Hero from "./Hero";
 import Timeline from "./Timeline";
-import QuickStart from "./time/QuickStart";
 import WaterTracker from "./WaterTracker";
 import { Group } from "./ui";
 
@@ -34,7 +33,6 @@ type DayData = {
   weights: WeightPoint[];
   exercises: Exercise[];
   timeEntries: TimeEntry[];
-  categories: string[];
 };
 
 // Any past day can be viewed; anything malformed or future falls back to today.
@@ -69,7 +67,6 @@ async function loadDay(requested: string | undefined): Promise<DayData> {
         .map((w) => ({ date: w.measured_on, kg: Number(w.weight_kg) })),
       exercises: demo.exercises.filter((e) => e.performed_on === date).sort(asc),
       timeEntries: demo.timeEntries.filter((t) => overlapsDay(t, dayStart, dayEnd)),
-      categories: Array.from(new Set(demo.timeEntries.map((t) => t.category))),
     };
   }
 
@@ -89,7 +86,6 @@ async function loadDay(requested: string | undefined): Promise<DayData> {
     { data: weightRows },
     { data: exercises },
     { data: timeEntries },
-    { data: recentCats },
   ] = await Promise.all([
     supabase.from("meals").select("*").eq("eaten_on", date).order("created_at"),
     supabase.from("water").select("ml").eq("drank_on", date).maybeSingle(),
@@ -106,11 +102,6 @@ async function loadDay(requested: string | undefined): Promise<DayData> {
       .lt("started_at", dayEnd.toISOString())
       .or(`ended_at.is.null,ended_at.gt.${dayStart.toISOString()}`)
       .order("started_at"),
-    supabase
-      .from("time_entries")
-      .select("category")
-      .order("created_at", { ascending: false })
-      .limit(200),
   ]);
 
   return {
@@ -127,9 +118,6 @@ async function loadDay(requested: string | undefined): Promise<DayData> {
     })),
     exercises: (exercises ?? []) as Exercise[],
     timeEntries: (timeEntries ?? []) as TimeEntry[],
-    categories: Array.from(
-      new Set(((recentCats ?? []) as { category: string }[]).map((c) => c.category)),
-    ),
   };
 }
 
@@ -150,7 +138,6 @@ export default async function HomePage({
     weights,
     exercises,
     timeEntries,
-    categories,
   } = await loadDay(typeof requested === "string" ? requested : undefined);
 
   const isToday = date === today;
@@ -184,7 +171,6 @@ export default async function HomePage({
   const dayTotals = totalsOnDay(timeEntries, date, timeZone, new Date());
   const timeTotal = Object.values(dayTotals).reduce((a, b) => a + b, 0);
   const totalSets = exercises.reduce((a, ex) => a + ex.sets.length, 0);
-  const runningCategory = timeEntries.find((t) => t.ended_at === null)?.category ?? null;
   const entryCount = meals.length + exercises.length + timeEntries.length;
 
   return (
@@ -207,9 +193,6 @@ export default async function HomePage({
           { label: "Fat", value: totals.fat, target: macroTargets.fat, color: "var(--time)" },
         ]} />
 
-      <Group title="Start a timer" domain="time">
-        <QuickStart categories={categories} running={runningCategory} />
-      </Group>
 
       <Group title="At a glance">
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
