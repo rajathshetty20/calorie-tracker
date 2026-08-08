@@ -41,3 +41,70 @@ started_at < day_end and (ended_at is null or ended_at > day_start)
 
 Geometry lives in `app/logoMark.ts`. `app/Logo.tsx` and the generated icons read from it;
 `app/icon.svg` is a static file that must be updated by hand to match.
+
+# Verifying a change
+
+`npx tsc --noEmit`, `npm run lint`, `npm run build` and `npm test` all passing does
+**not** mean a change works. That set cannot catch a function passed across the
+server/client boundary, text clipped inside a form control, a chart that renders
+empty, or data that is simply wrong. Every user-visible bug that reached production
+in this codebase passed all four first.
+
+**After changing a screen, load it and look at it.** Not the DOM — the pixels.
+
+```bash
+# headless Chrome with a debugging port
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --remote-debugging-port=9222 \
+  --user-data-dir=/tmp/cdp --no-first-run about:blank &
+```
+
+Drive it over CDP: `Emulation.setDeviceMetricsOverride` for the viewport (the app is
+iPhone-first — use 402x874 @3x), `Emulation.setEmulatedMedia` with
+`prefers-color-scheme` for themes, `Page.captureScreenshot` for the picture. Then
+actually view the PNG.
+
+Two traps in that workflow, both of which have produced false results here:
+
+- `Page.captureScreenshot` takes `clip` in **document** coordinates, not viewport.
+- `captureBeyondViewport: true` re-lays out the page, which makes Recharts'
+  `ResponsiveContainer` report `width(-1)` and render an **empty chart**. Scroll the
+  element into view and capture normally instead.
+
+## What automated checks miss
+
+Assertions are worth writing, but know their blind spots — each of these produced a
+confident "pass" over a real defect:
+
+- `scrollWidth === clientWidth` says nothing about **form controls**, which clip
+  internally. A time input rendered `10:15 PN`, losing the meridiem, with no overflow
+  reported anywhere.
+- A contrast checker that does not composite **alpha** measures text against the wrong
+  backdrop. Ours reported six failures on the timer bar and demo banner; all six were
+  the checker's own bug.
+- `datetime-local` renders completely differently on Chrome and iOS Safari, so its
+  width cannot be tested locally at all. Prefer primitives that render predictably —
+  separate `type="date"` and `type="time"`.
+
+## Audit the pattern, not the reported instance
+
+When a defect is found in one place, check every sibling for the same shape before
+calling it fixed. A duplicate legend was removed from the calories chart and left in
+the time chart; auditing all six charts against one checklist then found that *four
+of six* Y axes had no unit at all, and the aggregation tag wording had diverged.
+
+## Traps specific to this app
+
+- **Days come from `settings.timezone`**, never the server clock. Developing in IST
+  hides bugs that only appear on Vercel (UTC) between midnight and 05:30 local. Test
+  with `TZ=UTC npm run dev` before shipping anything that touches dates.
+- **Inputs under 16px make iOS zoom the page** and never zoom back. `input`/`textarea`
+  are pinned to 16px below `md` in `globals.css`. `select` is deliberately excluded —
+  it opens a picker, never zooms, and 16px there is oversized.
+- **Demo data must never contain entries in the future.** The generator lays out a
+  whole day at fixed clock times; a visitor at 04:00 was shown a meal eaten at 08:30.
+  Today's schedule is compressed into the elapsed part of the day.
+- **HTML `step` validates relative to `min`.** `step="50" min="1"` made 1000 invalid,
+  so `requestSubmit()` silently refused to fire and Settings could not be saved by
+  anyone on the default bottle size. Use `step="any"` and validate in JS, which can
+  report the problem visibly.
