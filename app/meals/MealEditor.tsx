@@ -18,7 +18,7 @@ export default function MealEditor({
   const [f, setF] = useState(String(Number(meal.fat_g)));
 
   const field =
-    "w-full rounded-lg border border-rule bg-surface px-2 py-2 tabular-nums outline-none focus:border-ink";
+    "w-full min-w-0 rounded-lg border border-rule bg-surface px-2 py-1.5 tabular-nums outline-none focus:border-ink";
 
   return (
     <div className="space-y-2">
@@ -26,7 +26,7 @@ export default function MealEditor({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Meal name"
-        className="w-full rounded-lg border border-rule bg-surface px-3 py-2 outline-none focus:border-ink"
+        className="w-full rounded-lg border border-rule bg-surface px-2.5 py-1.5 outline-none focus:border-ink"
       />
       <div className="grid grid-cols-3 gap-2">
         {[

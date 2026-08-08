@@ -69,7 +69,10 @@ export default function EditableRow({
         </div>
       </div>
       {editing && editor && (
-        <div ref={panel} className="mt-2 rounded-lg border border-rule p-3">
+        // Reclaim the timeline's time gutter (w-11 + gap-3 = 3.5rem). Left
+        // inside the content column the panel had ~250px on a phone, which
+        // squeezed every field and pushed controls against the edge.
+        <div ref={panel} className="-ml-14 mt-2 rounded-lg border border-rule bg-surface p-2.5">
           {editor(() => setEditing(false))}
         </div>
       )}

@@ -20,7 +20,7 @@ export default function ExerciseEditor({
   );
 
   const field =
-    "w-full rounded-lg border border-rule bg-surface px-2 py-2 tabular-nums outline-none focus:border-ink";
+    "w-full min-w-0 rounded-lg border border-rule bg-surface px-2 py-1.5 tabular-nums outline-none focus:border-ink";
 
   return (
     <div className="space-y-2">
@@ -28,10 +28,10 @@ export default function ExerciseEditor({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Exercise"
-        className="w-full rounded-lg border border-rule bg-surface px-3 py-2 outline-none focus:border-ink"
+        className="w-full rounded-lg border border-rule bg-surface px-2.5 py-1.5 outline-none focus:border-ink"
       />
       {rows.map((r, i) => (
-        <div key={i} className="flex items-center gap-2">
+        <div key={i} className="flex items-center gap-1.5">
           <input
             type="number"
             inputMode="decimal"
@@ -44,7 +44,7 @@ export default function ExerciseEditor({
             aria-label={`Set ${i + 1} weight`}
             className={field}
           />
-          <span className="shrink-0 text-[0.8125rem] text-ink-3">kg ×</span>
+          <span className="shrink-0 text-[0.75rem] text-ink-3">kg ×</span>
           <input
             type="number"
             inputMode="numeric"
@@ -62,7 +62,7 @@ export default function ExerciseEditor({
             onClick={() => setRows(rows.filter((_, j) => j !== i))}
             disabled={rows.length === 1}
             aria-label={`Remove set ${i + 1}`}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-surface-2 disabled:opacity-30"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-surface-2 disabled:opacity-30"
           >
             <Minus className="h-4 w-4" />
           </button>

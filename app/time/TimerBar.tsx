@@ -17,13 +17,7 @@ export type RunningTimer = { id: string; category: string; started_at: string };
  * An offset start reads as a countdown until it fires, then rolls over into
  * counting up. Same row, same timestamp, no scheduling anywhere.
  */
-export default function TimerBar({
-  timer,
-  compact = false,
-}: {
-  timer: RunningTimer;
-  compact?: boolean;
-}) {
+export default function TimerBar({ timer }: { timer: RunningTimer }) {
   const { run, busy, error, setError } = useWrite();
   const isDemo = useIsDemo();
   const now = useTicker(true);
@@ -53,7 +47,7 @@ export default function TimerBar({
   }
 
   return (
-    <div className={`sticky top-0 z-20 -mx-4 mb-2 border-b border-emerald-200 bg-emerald-50/95 px-4 backdrop-blur ${compact ? "py-1.5" : "py-2.5"} dark:border-emerald-900/60 dark:bg-emerald-950/70`}>
+    <div className="sticky top-0 z-20 -mx-4 mb-2 border-b border-emerald-200 bg-emerald-50/95 px-4 py-2.5 backdrop-blur dark:border-emerald-900/60 dark:bg-emerald-950/70">
       <div className="flex items-center gap-3">
         <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
           {!pending && (
@@ -82,13 +76,11 @@ export default function TimerBar({
           {pending ? "Cancel" : "Stop"}
         </button>
       </div>
-      {!compact && (
-        <div className="mt-0.5 text-[11px] text-emerald-700/80 dark:text-emerald-300/70">
+      <div className="mt-0.5 text-[11px] text-emerald-700/80 dark:text-emerald-300/70">
           {pending
             ? `Starts in ${fmtClock(elapsed)} — the clock begins at zero then.`
             : `Running · ${fmtDuration(Math.floor(elapsed / 60_000))} so far`}
         </div>
-      )}
     </div>
   );
 }

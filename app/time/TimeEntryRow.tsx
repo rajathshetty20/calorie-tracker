@@ -170,7 +170,7 @@ function Field({
           if (d && t) onChange(instantFromLocal(d, t.slice(0, 5), timeZone).toISOString());
         }}
         aria-label={`${label} time`}
-        className="block w-full rounded-lg border border-rule bg-surface px-2 py-2 tabular-nums outline-none focus:border-ink"
+        className="block w-full rounded-lg border border-rule bg-surface px-2 py-1.5 tabular-nums outline-none focus:border-ink"
       />
       <span className="inline-flex overflow-hidden rounded-lg border border-rule">
         {NUDGES.map((n) => (

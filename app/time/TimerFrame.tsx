@@ -16,13 +16,11 @@ export default function TimerFrame({ timer }: { timer: RunningTimer }) {
   const pathname = usePathname();
   if (pathname.startsWith("/login")) return null;
 
-  // Today is where you manage time; elsewhere the bar exists so a running
-  // timer is never invisible and is always one tap from stopping.
-  const compact = !(pathname === "/" || pathname === "/demo");
-
+  // One size everywhere: shrinking it on other pages made it look like a
+  // different, degraded component rather than the same bar.
   return (
     <div className="mx-auto w-full max-w-3xl px-4">
-      <TimerBar timer={timer} compact={compact} />
+      <TimerBar timer={timer} />
     </div>
   );
 }
