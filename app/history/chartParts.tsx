@@ -1,7 +1,6 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import WeekStats from "./WeekStats";
 import { useRange } from "./RangeContext";
 import { RANGES, type Range } from "./range";
 
@@ -28,13 +27,12 @@ export const CHART_CURSOR = { fill: "var(--chart-cursor)" } as const;
 // stats wrap to their own line on narrow screens.
 export function ChartHeader({
   title,
-  avg,
-  std,
+  stats,
   note,
 }: {
   title: string;
-  avg: string;
-  std: string;
+  /** Summary for the selected window, not a fixed 7 days. */
+  stats?: React.ReactNode;
   /** Aggregation label, shown only when the chart isn't plotting raw days. */
   note?: string | null;
 }) {
@@ -43,9 +41,7 @@ export function ChartHeader({
       <h2 className="text-[0.8125rem] font-medium text-ink-3">{title}</h2>
       {note && <AggregationChip label={note} />}
       {/* The range control belongs to ChartSwitcher now — one per page. */}
-      <div className="ml-auto">
-        <WeekStats avg={avg} std={std} />
-      </div>
+      <div className="ml-auto">{stats}</div>
     </div>
   );
 }

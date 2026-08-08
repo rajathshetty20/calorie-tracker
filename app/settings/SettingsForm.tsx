@@ -176,19 +176,28 @@ export default function SettingsForm({ initial }: { initial: Initial }) {
 
       <label className="block border-t border-rule pt-4">
         <span className="text-[0.75rem] text-ink-3">Timezone</span>
-        <input type="text"
-          value={timezone}
-          onChange={(e) => setTimezone(e.target.value.trim())} list="tz-suggestions"
-          spellCheck={false}
- className="mt-1 block w-full max-w-[18rem] rounded-lg border border-rule bg-surface px-3 py-2 text-[0.8125rem] outline-none focus:border-ink " />
-        <datalist id="tz-suggestions">
+        <select
+          value={COMMON_ZONES.includes(timezone) || !detected ? timezone : timezone}
+          onChange={(e) => setTimezone(e.target.value)}
+          className="mt-1 block w-full max-w-[18rem] rounded-lg border border-rule bg-surface px-3 py-2 outline-none focus:border-ink"
+        >
+          {detected && !COMMON_ZONES.includes(detected) && (
+            <option value={detected}>{detected} (this device)</option>
+          )}
+          {!COMMON_ZONES.includes(timezone) && timezone !== detected && (
+            <option value={timezone}>{timezone}</option>
+          )}
           {COMMON_ZONES.map((z) => (
-            <option key={z} value={z} />
+            <option key={z} value={z}>
+              {z}
+              {z === detected ? " (this device)" : ""}
+            </option>
           ))}
-        </datalist>
+        </select>
         <span className="mt-1 block text-[0.75rem] text-ink-3">
-          Decides where your day starts and ends — including how an entry that
-          crosses midnight is divided between two days.
+          Where your day starts and ends. Set it to where you live: it decides
+          which day an entry counts towards, and how one that crosses midnight
+          is divided between two days.
           {detected && !sameZone(detected, timezone) && (
             <>
               {" "}

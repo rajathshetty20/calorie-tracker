@@ -21,6 +21,7 @@ import {
   xTickProps,
 } from "./chartParts";
 import { useRange } from "./RangeContext";
+import { CategoryStats, RangeHeadline } from "./RangeStats";
 import {
   aggregationLabel,
   bucketDays,
@@ -42,15 +43,7 @@ type ChartRow = { date: string; startDate: string; endDate: string; size: number
   number | string
 >;
 
-export default function TimeChart({
-  rows,
-  avg7,
-  std7,
-}: {
-  rows: TimeDay[]; // continuous full lookback, ascending
-  avg7: string;
-  std7: string;
-}) {
+export default function TimeChart({ rows }: { rows: TimeDay[] }) {
   const { range } = useRange();
   const { ref, maxPoints } = useMaxPoints(PX_PER_BAR);
 
@@ -110,10 +103,19 @@ export default function TimeChart({
 
   return (
     <section className="border-t border-rule pt-3">
-      <ChartHeader title="Time"
-        avg={avg7}
-        std={std7}
-        note={aggregationLabel(bucketSize, 1)} />
+      <ChartHeader
+        title="Time"
+        stats={
+          <RangeHeadline
+            series={{
+              label: "Time",
+              values: rows.map((r) => Object.values(r.totals).reduce((a, b) => a + b, 0)),
+              format: fmtDuration,
+            }}
+          />
+        }
+        note={aggregationLabel(bucketSize, 1)}
+      />
 
       {named.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>
@@ -150,6 +152,16 @@ export default function TimeChart({
               </BarChart>
             </ResponsiveContainer>
           </div>
+          {/* Average and spread per category over the selected window —
+              a stacked bar can show the mix but not the typical amount. */}
+          <CategoryStats
+            series={series.map((se) => ({
+              label: se.label,
+              values: rows.map((r) => Number(r.totals[se.key.replace(/^c_/, "")] ?? 0)),
+              format: fmtDuration,
+            }))}
+            colors={Object.fromEntries(series.map((se) => [se.label, se.color]))}
+          />
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[0.75rem] text-ink-3">
             {series.map((s) => (
               <span key={s.key} className="inline-flex items-center gap-1.5">

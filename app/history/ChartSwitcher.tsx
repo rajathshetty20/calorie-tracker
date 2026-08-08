@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { RangeToggle } from "./chartParts";
-import TabStrip from "../TabStrip";
 
 // One chart at a time. Five stacked charts meant the range control repeated
 // five times and any single comparison required scrolling past four others.
@@ -21,30 +20,47 @@ export default function ChartSwitcher({
       <div className="flex justify-end">
         <RangeToggle />
       </div>
-      <div className="flex items-center gap-2">
-        <TabStrip activeKey={current.key}>
+      {/* Six labels never fit one phone line, and wrapping them left a ragged
+          second row. A native picker is one line, shows the current chart, and
+          reaches every option; the tabs return where there is room. */}
+      <label className="block md:hidden">
+        <span className="sr-only">Chart</span>
+        <select
+          value={current.key}
+          onChange={(e) => setActive(e.target.value)}
+          className="w-full rounded-lg border border-rule bg-surface px-3 py-2 text-[0.9375rem] font-semibold outline-none focus:border-ink"
+        >
           {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setActive(t.key)}
-              aria-pressed={t.key === current.key}
-              className={`min-h-[38px] shrink-0 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold whitespace-nowrap transition-colors ${
-                t.key === current.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: t.key === current.key ? t.color : "transparent" }}
-                />
-                {t.label}
-              </span>
-            </button>
+            <option key={t.key} value={t.key}>
+              {t.label}
+            </option>
           ))}
-        </TabStrip>
+        </select>
+      </label>
+
+      <div className="hidden items-center gap-1 md:flex">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setActive(t.key)}
+            aria-pressed={t.key === current.key}
+            className={`min-h-[38px] rounded-lg px-3 py-2 text-[0.8125rem] font-semibold whitespace-nowrap transition-colors ${
+              t.key === current.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="inline-block h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: t.key === current.key ? t.color : "transparent" }}
+              />
+              {t.label}
+            </span>
+          </button>
+        ))}
       </div>
+
       {current.node}
     </div>
   );

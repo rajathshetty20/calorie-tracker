@@ -29,7 +29,7 @@ export default function TrendsCard({
         <h2 className="text-[0.8125rem] font-semibold uppercase tracking-wide text-ink-2">
           Last 7 days
         </h2>
-        <span className="text-[0.8125rem] text-ink-3">vs previous 7</span>
+        <span className="text-[0.8125rem] text-ink-3">vs prev 7 days</span>
       </div>
       {/* These are averages over days that have data. With only some days
           logged the headline flatters you and matches nothing, so say how

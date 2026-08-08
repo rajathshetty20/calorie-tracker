@@ -22,6 +22,7 @@ import {
   xTickProps,
 } from "./chartParts";
 import { useRange } from "./RangeContext";
+import { CategoryStats, RangeHeadline } from "./RangeStats";
 import {
   aggregationLabel,
   bucketDays,
@@ -47,17 +48,7 @@ type Plot = DayRow & { startDate: string; endDate: string; size: number };
 
 const logged = (d: DayRow) => d.total_kcal > 0;
 
-export default function HistoryChart({
-  rows,
-  target,
-  avg7,
-  std7,
-}: {
-  rows: DayRow[];
-  target: number;
-  avg7: string;
-  std7: string;
-}) {
+export default function HistoryChart({ rows, target }: { rows: DayRow[]; target: number }) {
   const { range } = useRange();
   const { ref, maxPoints } = useMaxPoints(PX_PER_BAR);
 
@@ -84,10 +75,19 @@ export default function HistoryChart({
 
   return (
     <section className="border-t border-rule pt-3">
-      <ChartHeader title="Calories"
-        avg={avg7}
-        std={std7}
-        note={aggregationLabel(bucketSize, 1)} />
+      <ChartHeader
+        title="Calories"
+        stats={
+          <RangeHeadline
+            series={{
+              label: "Calories",
+              values: rows.map((r) => r.total_kcal),
+              format: (n) => `${Math.round(n)} kcal`,
+            }}
+          />
+        }
+        note={aggregationLabel(bucketSize, 1)}
+      />
 
       <div className={CHART_BODY} ref={ref}>
         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -113,6 +113,17 @@ export default function HistoryChart({
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Per-macro averages for the same window — the question "am I hitting
+          protein?" cannot be read off a stacked bar. */}
+      <CategoryStats
+        series={[
+          { label: "Carbs", values: rows.map((r) => r.carbs_g), format: (n) => `${Math.round(n)}g` },
+          { label: "Protein", values: rows.map((r) => r.protein_g), format: (n) => `${Math.round(n)}g` },
+          { label: "Fat", values: rows.map((r) => r.fat_g), format: (n) => `${Math.round(n)}g` },
+        ]}
+        colors={{ Carbs: "#f59e0b", Protein: "#0ea5e9", Fat: "#f43f5e" }}
+      />
 
       <div className="mt-3 flex flex-wrap gap-3 text-[0.75rem] text-ink-3">
         <Legend color="bg-amber-500" label="Carbs" />

@@ -124,7 +124,7 @@ export default function ExerciseChart({
             <select
               value={selected}
               onChange={(e) => setName(e.target.value)}
- className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-2 py-1.5 text-[0.8125rem] outline-none focus:border-ink " >
+ className="min-w-0 flex-1 rounded-lg border border-rule bg-surface px-2 py-1.5 text-[0.8125rem] font-medium outline-none focus:border-ink " >
               {names.map((n) => (
                 <option key={n} value={n}>
                   {n}

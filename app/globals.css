@@ -125,6 +125,13 @@
   --text-label: 0.8125rem;
 }
 
+/* Stops iOS double-tap-to-zoom, which fires on ordinary taps in a dense
+   list and leaves the page at an arbitrary zoom. Pinch-zoom is untouched,
+   so this costs nothing in accessibility. */
+html {
+  touch-action: manipulation;
+}
+
 body {
   background: var(--ground);
   color: var(--ink);
@@ -157,8 +164,10 @@ body {
    any input in the add sheet zoomed the app. Unlayered, so it beats the
    Tailwind size utilities, which live in @layer utilities. */
 @media (max-width: 767px) {
+  /* select is deliberately excluded: it opens a picker wheel rather than a
+     keyboard, so it never triggers the zoom — and forcing 16px there made
+     the exercise name dominate its card. */
   input,
-  select,
   textarea {
     font-size: 16px;
   }

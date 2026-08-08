@@ -21,11 +21,11 @@ import {
   xTickProps,
 } from "./chartParts";
 import { useRange } from "./RangeContext";
+import { RangeHeadline } from "./RangeStats";
 import {
-  aggregationLabel,
   DOT_LIMIT,
   PX_PER_DOT,
-  rollingMean,
+  rollingMeanByDate,
   smoothWindowFor,
   useMaxPoints,
 } from "./series";
@@ -36,13 +36,9 @@ type Plot = WeightPoint & { smooth: number };
 export default function WeightChart({
   data: allData,
   today,
-  avg7,
-  std7,
 }: {
   data: WeightPoint[];
   today: string; // YYYY-MM-DD, from the server
-  avg7: string;
-  std7: string;
 }) {
   const { range } = useRange();
   const { ref, maxPoints } = useMaxPoints(PX_PER_DOT);
@@ -52,12 +48,16 @@ export default function WeightChart({
     return allData.filter((d) => d.date >= cutoff);
   }, [allData, today, range]);
 
-  // Weigh-ins are near-daily but not guaranteed, so the window counts entries.
+  // Smoothing is measured in days, so the chip can say "7-day average" and
+  // mean it even when weigh-ins skip a day.
   const smoothWindow = smoothWindowFor(windowed.length, maxPoints);
   const smoothing = smoothWindow > 1;
 
   const data = useMemo<Plot[]>(() => {
-    const means = rollingMean(windowed.map((d) => d.kg), smoothWindow);
+    const means = rollingMeanByDate(
+      windowed.map((d) => ({ date: d.date, value: d.kg })),
+      smoothWindow,
+    );
     return windowed.map((d, i) => ({ ...d, smooth: Math.round(means[i] * 10) / 10 }));
   }, [windowed, smoothWindow]);
 
@@ -68,10 +68,19 @@ export default function WeightChart({
 
   return (
     <section className="border-t border-rule pt-3">
-      <ChartHeader title="Weight"
-        avg={avg7}
-        std={std7}
-        note={aggregationLabel(1, smoothWindow)} />
+      <ChartHeader
+        title="Weight"
+        stats={
+          <RangeHeadline
+            series={{
+              label: "Weight",
+              values: allData.map((d) => d.kg),
+              format: (n) => `${n.toFixed(1)} kg`,
+            }}
+          />
+        }
+        note={smoothing ? `${smoothWindow}-day average` : null}
+      />
 
       {data.length === 0 ? (
         <div className={`${CHART_BODY} flex items-center justify-center`}>

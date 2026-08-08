@@ -10,7 +10,6 @@ import WeightForm from "./WeightForm";
 import WaterTracker from "./WaterTracker";
 import { loadQuickAddData, type QuickAddData } from "./quickAddData";
 import { DOMAIN_COLOR, type Domain } from "./ui";
-import TabStrip from "./TabStrip";
 
 const TABS: { key: Domain; label: string }[] = [
   { key: "food", label: "Meal" },
@@ -85,13 +84,13 @@ export default function QuickAdd({
         <style>{`@keyframes sheet-in{from{transform:translateY(12px);opacity:.6}to{transform:none;opacity:1}}`}</style>
 
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-rule bg-surface px-4 pb-2 pt-3">
-          <TabStrip activeKey={tab}>
+          <div className="grid flex-1 grid-cols-5 gap-1">
             {TABS.map((t) => (
               <button
                 key={t.key} type="button"
                 onClick={() => setTab(t.key)}
                 aria-pressed={tab === t.key}
- className={`min-h-[40px] shrink-0 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold transition-colors ${
+ className={`min-h-[40px] rounded-lg px-1 py-2 text-[0.75rem] font-semibold transition-colors ${
                   tab === t.key ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink-2"
                 }`} >
                 <span className="flex items-center gap-1.5">
@@ -104,7 +103,7 @@ export default function QuickAdd({
                 </span>
               </button>
             ))}
-          </TabStrip>
+          </div>
           <button type="button"
             onClick={onClose} aria-label="Close"
  className="shrink-0 rounded-lg p-1.5 text-ink-3 hover:bg-surface-2 hover:text-ink" >

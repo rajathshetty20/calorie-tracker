@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { demoData } from "@/lib/demo-data";
-import { fmtDuration, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
+import { fmtDuration, KCAL_PER_G, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
 import { addDaysISO, localDateISO, localDayRange } from "@/lib/time";
 import { totalsByDay } from "@/lib/timeEntries";
 import { DEMO_TIME_ZONE } from "@/lib/demo-data";
@@ -199,21 +199,6 @@ export default async function HistoryPage({
 
   // 7-day average + standard deviation, over days that actually have data.
   const weekCutoff = addDaysISO(end, -(WEEK_DAYS - 1));
-  const kcalStats = meanStd(
-    rows.slice(-WEEK_DAYS).filter((r) => r.total_kcal > 0).map((r) => r.total_kcal),
-  );
-  const waterStats = meanStd(
-    waterRows.slice(-WEEK_DAYS).filter((r) => r.litres > 0).map((r) => r.litres),
-  );
-  const weightStats = meanStd(
-    weightSeries.filter((w) => w.date >= weekCutoff).map((w) => w.kg),
-  );
-  const timeStats = meanStd(
-    timeRows
-      .slice(-WEEK_DAYS)
-      .map((r) => Object.values(r.totals).reduce((a, b) => a + b, 0))
-      .filter((total) => total > 0),
-  );
 
   // "Is this week different from last week?" is the first question a history
   // page should answer, before any chart is read.
@@ -315,13 +300,7 @@ export default async function HistoryPage({
               label: "Calories",
               color: "var(--food)",
               node: (
-                <HistoryChart
-                  key="calories"
-                  rows={rows}
-                  target={target}
-                  avg7={kcalStats.n ? `${Math.round(kcalStats.mean)} kcal` : "—"}
-                  std7={kcalStats.n ? `±${Math.round(kcalStats.std)}` : "—"}
-                />
+                <HistoryChart key="calories" rows={rows} target={target} />
               ),
             },
             {
@@ -329,13 +308,7 @@ export default async function HistoryPage({
               label: "Weight",
               color: "var(--weight)",
               node: (
-                <WeightChart
-                  key="weight"
-                  data={weightSeries}
-                  today={end}
-                  avg7={weightStats.n ? `${weightStats.mean.toFixed(1)} kg` : "—"}
-                  std7={weightStats.n ? `±${weightStats.std.toFixed(1)}` : "—"}
-                />
+                <WeightChart key="weight" data={weightSeries} today={end} />
               ),
             },
             {
@@ -349,12 +322,7 @@ export default async function HistoryPage({
               label: "Water",
               color: "var(--water)",
               node: (
-                <WaterChart
-                  key="water"
-                  rows={waterRows}
-                  avg7={waterStats.n ? `${waterStats.mean.toFixed(1)} L` : "—"}
-                  std7={waterStats.n ? `±${waterStats.std.toFixed(1)}` : "—"}
-                />
+                <WaterChart key="water" rows={waterRows} />
               ),
             },
             {
@@ -368,12 +336,7 @@ export default async function HistoryPage({
               label: "Time",
               color: "var(--time)",
               node: (
-                <TimeChart
-                  key="time"
-                  rows={timeRows}
-                  avg7={timeStats.n ? fmtDuration(timeStats.mean) : "—"}
-                  std7={timeStats.n ? `±${fmtDuration(timeStats.std)}` : "—"}
-                />
+                <TimeChart key="time" rows={timeRows} />
               ),
             },
           ]}

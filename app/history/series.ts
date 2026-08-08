@@ -141,6 +141,35 @@ export function rollingMean(values: number[], window: number): number[] {
 }
 
 /**
+ * Centred mean over a window of DAYS, not of entries.
+ *
+ * Weigh-ins are irregular, so "average of the last 7 readings" can span two
+ * weeks and cannot honestly be called a 7-day average. This keys off the
+ * dates, so the label matches the maths.
+ */
+export function rollingMeanByDate(
+  points: { date: string; value: number }[],
+  days: number,
+): number[] {
+  const half = Math.floor(days / 2);
+  const ms = 86_400_000;
+  const times = points.map((p) => new Date(`${p.date}T12:00:00Z`).getTime());
+  return points.map((_, i) => {
+    const lo = times[i] - half * ms;
+    const hi = times[i] + half * ms;
+    let sum = 0;
+    let n = 0;
+    for (let j = 0; j < points.length; j++) {
+      if (times[j] >= lo && times[j] <= hi) {
+        sum += points[j].value;
+        n++;
+      }
+    }
+    return n > 0 ? sum / n : points[i].value;
+  });
+}
+
+/**
  * Smoothing window for a line series: 1 (none) while the series fits the
  * budget, otherwise an odd width proportional to how far over it is.
  */

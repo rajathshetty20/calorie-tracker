@@ -21,6 +21,7 @@ import {
   xTickProps,
 } from "./chartParts";
 import { useRange } from "./RangeContext";
+import { RangeHeadline } from "./RangeStats";
 import {
   aggregationLabel,
   bucketDays,
@@ -34,15 +35,7 @@ export type WaterDay = { date: string; litres: number };
 
 type Plot = WaterDay & { startDate: string; endDate: string; size: number };
 
-export default function WaterChart({
-  rows,
-  avg7,
-  std7,
-}: {
-  rows: WaterDay[];
-  avg7: string;
-  std7: string;
-}) {
+export default function WaterChart({ rows }: { rows: WaterDay[] }) {
   const { range } = useRange();
   const { ref, maxPoints } = useMaxPoints(PX_PER_BAR);
 
@@ -63,9 +56,17 @@ export default function WaterChart({
 
   return (
     <section className="border-t border-rule pt-3">
-      <ChartHeader title="Water"
-        avg={avg7}
-        std={std7}
+      <ChartHeader
+        title="Water"
+        stats={
+          <RangeHeadline
+            series={{
+              label: "Water",
+              values: rows.map((r) => r.litres),
+              format: (n) => `${n.toFixed(1)} L`,
+            }}
+          />
+        }
         note={aggregationLabel(bucketSize, 1)} />
 
       <div className={CHART_BODY} ref={ref}>
