@@ -13,6 +13,11 @@ export default function LoginPage() {
   // before you ever click it. The emailed 6-digit code is not a URL, so
   // nothing can consume it on your behalf.
   const [code, setCode] = useState("");
+  // The callback redirects here with ?error= when a link cannot be redeemed,
+  // rather than bouncing silently and looking like nothing happened.
+  const [linkError] = useState(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("error"),
+  );
   const [verifying, setVerifying] = useState(false);
 
   async function onVerify(e: React.FormEvent<HTMLFormElement>) {
@@ -73,6 +78,17 @@ export default function LoginPage() {
  className="w-full rounded-lg bg-ink px-3 py-2 text-[0.8125rem] font-semibold text-ground hover:opacity-90 disabled:opacity-40" >
           {status === "sending" ? "Sending..." : "Send link"}
         </button>
+        {linkError && status === "idle" && (
+          <div className="space-y-1 rounded-lg border border-rule bg-surface-2 p-3 text-[0.8125rem]">
+            <p className="font-medium text-over">That sign-in link didn&apos;t work.</p>
+            <p className="text-ink-2">
+              Links can only be opened in the browser that asked for them, and mail apps often
+              open their own. Request a new one below and use the <strong>6-digit code</strong> from
+              the email instead — it works anywhere.
+            </p>
+          </div>
+        )}
+
         {status === "sent" && (
           <div className="space-y-2 rounded-lg border border-rule p-3">
             <p className="text-[0.8125rem] text-emerald-600">
