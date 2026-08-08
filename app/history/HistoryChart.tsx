@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import {
+  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   CHART_CURSOR,
@@ -102,8 +103,10 @@ export default function HistoryChart({ rows, target }: { rows: DayRow[]; target:
                   clipped out of the plot while the legend still claims it. */}
               <YAxis
                 {...AXIS_PROPS}
-                width={38}
+                width={46}
                 domain={[0, (dataMax: number) => Math.ceil(Math.max(dataMax, target) * 1.08)]}
+                tickFormatter={(v: number) => (v >= 1000 ? `${v / 1000}k` : String(v))}
+                label={axisLabel("kcal")}
               />
             <Tooltip cursor={CHART_CURSOR} content={<MacroTooltip />} />
             <ReferenceLine y={target} stroke="var(--ink-3)" strokeDasharray="4 4" ifOverflow="visible" />

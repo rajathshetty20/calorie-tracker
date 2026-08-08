@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import {
+  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   CHART_CURSOR,
@@ -81,7 +82,8 @@ export default function WaterChart({ rows }: { rows: WaterDay[] }) {
             <YAxis
               {...AXIS_PROPS}
               width={38}
-              tickFormatter={(v: number) => `${v}L`} />
+              tickFormatter={(v: number) => String(v)}
+              label={axisLabel("litres")} />
             <Tooltip cursor={CHART_CURSOR} content={<WaterTooltip />} />
             <Bar dataKey="litres" fill="#0ea5e9" name="Water" radius={[4, 4, 0, 0]} />
           </BarChart>

@@ -23,6 +23,24 @@ export const AXIS_PROPS = {
 
 export const CHART_CURSOR = { fill: "var(--chart-cursor)" } as const;
 
+/**
+ * Axis unit label. Every axis should say what it measures — bare numbers on
+ * a calorie or weight axis leave the reader to guess the unit.
+ */
+export function axisLabel(
+  value: string,
+  fill = "rgb(113 113 122)",
+  position: "left" | "right" = "left",
+) {
+  return {
+    value,
+    angle: -90,
+    position: position === "left" ? ("insideLeft" as const) : ("insideRight" as const),
+    style: { fontSize: 10, fill, textAnchor: "middle" as const },
+    offset: position === "left" ? 4 : 0,
+  };
+}
+
 // Header that keeps title + range toggle on one row and lets the weekly
 // stats wrap to their own line on narrow screens.
 export function ChartHeader({

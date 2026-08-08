@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { AXIS_PROPS, CHART_BODY, fmtFullDate, fmtTick, TooltipCard, xTickProps } from "./chartParts";
+import { axisLabel, AXIS_PROPS, CHART_BODY, fmtFullDate, fmtTick, TooltipCard, xTickProps } from "./chartParts";
 import { useRange } from "./RangeContext";
 
 type Point = { date: string; kcal: number | null; kg: number | null };
@@ -106,15 +106,17 @@ export default function CaloriesWeightChart({
                   yAxisId="kcal"
                   {...AXIS_PROPS}
                   tick={{ ...AXIS_PROPS.tick, fill: "var(--food)" }}
-                  width={46}
+                  width={50}
                   domain={[0, "auto"]}
+                  label={axisLabel("kcal", "var(--food)")}
                 />
                 <YAxis
                   yAxisId="kg"
                   orientation="right"
                   {...AXIS_PROPS}
                   tick={{ ...AXIS_PROPS.tick, fill: "var(--weight)" }}
-                  width={40}
+                  width={44}
+                  label={axisLabel("kg", "var(--weight)", "right")}
                   domain={[
                     Math.floor((kgMin - pad) * 10) / 10,
                     Math.ceil((kgMax + pad) * 10) / 10,

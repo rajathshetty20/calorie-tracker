@@ -21,6 +21,7 @@ import {
 } from "@/lib/types";
 import {
   AggregationChip,
+  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   fmtFullDate,
@@ -174,8 +175,9 @@ export default function ExerciseChart({
               <YAxis
                 domain={metric === "volume" ? [0, "auto"] : [Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
-                width={38}
-                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))} />
+                width={46}
+                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
+                label={axisLabel(metric === "volume" ? "kg total" : "kg")} />
               <Tooltip content={<ExerciseTooltip metric={metric} smoothing={smoothing} />} />
               {/* Volume is a quantity accumulated in a session, so it gets bars
                   from a zero baseline. Top set and 1RM are levels, not totals,

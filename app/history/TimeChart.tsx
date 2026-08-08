@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { displayCategory, fmtDuration } from "@/lib/types";
 import {
+  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   CHART_CURSOR,
@@ -137,7 +138,8 @@ export default function TimeChart({ rows }: { rows: TimeDay[] }) {
                 <YAxis
                   {...AXIS_PROPS}
                   width={38}
-                  tickFormatter={(v: number) => `${Math.round((v / 60) * 10) / 10}h`} />
+                  tickFormatter={(v: number) => String(Math.round((v / 60) * 10) / 10)}
+                  label={axisLabel("hours")} />
                 <Tooltip cursor={CHART_CURSOR} content={<TimeTooltip series={series} />} />
                 {series.map((s, i) => (
                   <Bar
@@ -162,16 +164,6 @@ export default function TimeChart({ rows }: { rows: TimeDay[] }) {
             }))}
             colors={Object.fromEntries(series.map((se) => [se.label, se.color]))}
           />
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[0.75rem] text-ink-3">
-            {series.map((s) => (
-              <span key={s.key} className="inline-flex items-center gap-1.5">
-                <span
- className="inline-block h-2 w-2 rounded-sm"
-                  style={{ backgroundColor: s.color }} />
-                {s.label}
-              </span>
-            ))}
-          </div>
         </>
       )}
     </section>

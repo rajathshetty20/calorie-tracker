@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { format, parseISO, subDays } from "date-fns";
 import {
+  axisLabel,
   AXIS_PROPS,
   CHART_BODY,
   ChartHeader,
@@ -79,7 +80,7 @@ export default function WeightChart({
             }}
           />
         }
-        note={smoothing ? `${smoothWindow}-day average` : null}
+        note={smoothing ? `${smoothWindow}-day group` : null}
       />
 
       {data.length === 0 ? (
@@ -101,7 +102,8 @@ export default function WeightChart({
               <YAxis
                 domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
                 {...AXIS_PROPS}
-                width={38} />
+                width={44}
+                label={axisLabel("kg")} />
               <Tooltip content={<WeightTooltip smoothing={smoothing} />} />
 
               {/* A line, not an area. An area fill measures down to the axis
