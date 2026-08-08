@@ -1,5 +1,5 @@
-import { isoDaysAgo, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "./types";
-import { addDaysISO, instantFromLocal } from "./time";
+import type { Exercise, Meal, Settings, TimeEntry, Water, Weight } from "./types";
+import { addDaysISO, instantFromLocal, localDateISO } from "./time";
 
 // Sample dataset for logged-out demo mode: 90 days of realistic entries,
 // generated from a fixed seed so every visit sees the same data (dates
@@ -10,6 +10,14 @@ const DEMO_USER = "demo";
 // The demo dataset is rendered in one fixed zone so the sample intervals land
 // on the days they were designed for, whoever is looking.
 export const DEMO_TIME_ZONE = "Asia/Kolkata";
+
+// Days are counted back from *today in the demo zone*. Using the server's own
+// clock meant Vercel (UTC) generated a dataset ending a day earlier than the
+// IST date the pages ask for, so between midnight and 05:30 IST nothing
+// matched and every total read zero.
+function demoDaysAgo(n: number) {
+  return addDaysISO(localDateISO(new Date(), DEMO_TIME_ZONE), -n);
+}
 
 // Local wall clock on a demo day -> ISO instant.
 function atZone(dateISO: string, hhmm: string) {
@@ -109,7 +117,7 @@ export function demoData() {
   let workout = 0;
   for (let i = 0; i < DAYS; i++) {
     const daysAgo = DAYS - 1 - i;
-    const date = isoDaysAgo(daysAgo);
+    const date = demoDaysAgo(daysAgo);
     const isToday = daysAgo === 0;
     const weekday = new Date(`${date}T12:00:00`).getDay();
     // A real instant, not `${date}T${time}:00` — that string carries no
@@ -219,7 +227,7 @@ export function demoData() {
     fat_pct: 30,
     bottle_ml: 500,
     timezone: DEMO_TIME_ZONE,
-    updated_at: isoDaysAgo(0),
+    updated_at: demoDaysAgo(0),
   };
 
   return { meals, water, weights, exercises, timeEntries, settings };

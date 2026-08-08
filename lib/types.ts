@@ -101,18 +101,10 @@ export function plural(n: number, word: string, pluralWord = `${word}s`) {
   return `${n} ${n === 1 ? word : pluralWord}`;
 }
 
-// Local YYYY-MM-DD, n days ago.
-export function isoDaysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  const tz = d.getTimezoneOffset() * 60_000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
-
-// Local YYYY-MM-DD for "today".
-export function todayISO() {
-  return isoDaysAgo(0);
-}
+// Deliberately absent: isoDaysAgo()/todayISO(). They resolved days in the
+// *server's* timezone, which is UTC on Vercel, so a user's day silently
+// disagreed with the server's. Use localDateISO(new Date(), tz) and
+// addDaysISO() from lib/time.ts, with the zone from settings.
 
 // Categories are stored lowercase; show them with a leading capital.
 export function displayCategory(category: string) {

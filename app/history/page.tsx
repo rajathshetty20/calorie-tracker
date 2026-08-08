@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { demoData } from "@/lib/demo-data";
-import { fmtDuration, isoDaysAgo, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
-import { localDayRange } from "@/lib/time";
+import { fmtDuration, KCAL_PER_G, meanStd, type Exercise, type Meal, type Settings, type TimeEntry, type Water, type Weight } from "@/lib/types";
+import { addDaysISO, localDateISO, localDayRange } from "@/lib/time";
 import { totalsByDay } from "@/lib/timeEntries";
 import { DEMO_TIME_ZONE } from "@/lib/demo-data";
 import DemoBanner from "../DemoBanner";
@@ -22,6 +22,8 @@ const WEEK_DAYS = 7;
 type HistoryData = {
   isDemo: boolean;
   timeZone: string;
+  start: string;
+  end: string;
   meals: Meal[];
   water: Water[];
   weights: Weight[];
@@ -30,13 +32,20 @@ type HistoryData = {
   timeEntries: TimeEntry[];
 };
 
-async function loadHistory(start: string, end: string): Promise<HistoryData> {
+async function loadHistory(): Promise<HistoryData> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // The window has to be expressed in the user's days, not the server's.
+  const windowFor = (timeZone: string) => {
+    const end = localDateISO(new Date(), timeZone);
+    return { start: addDaysISO(end, -(LOOKBACK_DAYS - 1)), end };
+  };
+
   if (!user) {
+    const { start, end } = windowFor(DEMO_TIME_ZONE);
     const demo = demoData();
     const inRange = (d: string) => d >= start && d <= end;
     const windowStart = localDayRange(start, DEMO_TIME_ZONE).start;
@@ -44,6 +53,8 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
     return {
       isDemo: true,
       timeZone: DEMO_TIME_ZONE,
+      start,
+      end,
       meals: demo.meals.filter((m) => inRange(m.eaten_on)),
       water: demo.water.filter((w) => inRange(w.drank_on)),
       weights: demo.weights,
@@ -62,6 +73,7 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
   const { data: settingsRow } = await supabase.from("settings").select("*").single();
   const settings = settingsRow as Settings | null;
   const timeZone = settings?.timezone || DEMO_TIME_ZONE;
+  const { start, end } = windowFor(timeZone);
   const windowStart = localDayRange(start, timeZone).start;
   const windowEnd = localDayRange(end, timeZone).end;
 
@@ -105,6 +117,8 @@ async function loadHistory(start: string, end: string): Promise<HistoryData> {
   return {
     isDemo: false,
     timeZone,
+    start,
+    end,
     meals: (meals ?? []) as Meal[],
     water: (water ?? []) as Water[],
     weights: (weights ?? []) as Weight[],
@@ -122,10 +136,8 @@ export default async function HistoryPage({
   // ?range= is the initial value only; the toggle updates it client-side with
   // replaceState, since all 90 days are already loaded.
   const range = parseRange((await searchParams)?.range);
-  const start = isoDaysAgo(LOOKBACK_DAYS - 1);
-  const end = isoDaysAgo(0);
-  const { isDemo, timeZone, meals, water, weights, settings: s, exercises, timeEntries } =
-    await loadHistory(start, end);
+  const { isDemo, timeZone, start, end, meals, water, weights, settings: s, exercises, timeEntries } =
+    await loadHistory();
 
   const target = s?.target_calories ?? 2000;
 
@@ -134,7 +146,7 @@ export default async function HistoryPage({
   const waterByDay = new Map<string, WaterDay>();
   const timeByDay = new Map<string, TimeDay>();
   for (let i = 0; i < LOOKBACK_DAYS; i++) {
-    const date = isoDaysAgo(LOOKBACK_DAYS - 1 - i);
+    const date = addDaysISO(start, i);
     byDay.set(date, {
       date,
       carbs_g: 0,
@@ -186,7 +198,7 @@ export default async function HistoryPage({
   }));
 
   // 7-day average + standard deviation, over days that actually have data.
-  const weekCutoff = isoDaysAgo(WEEK_DAYS - 1);
+  const weekCutoff = addDaysISO(end, -(WEEK_DAYS - 1));
   const kcalStats = meanStd(
     rows.slice(-WEEK_DAYS).filter((r) => r.total_kcal > 0).map((r) => r.total_kcal),
   );
